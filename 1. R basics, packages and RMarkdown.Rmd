@@ -1,0 +1,133 @@
+---
+title: "1. R language basics, installing packages and RMarkdown usage"
+author: "Ana J. Alegre (jalegre@centrogeo.edu.mx), Cristian Silva (csilva@centrogeo.edu.mx)"
+output: html_notebook
+date: "11/3/2021"
+---
+
+## Introduction
+
+Molestias repudiandae magnam saepe distinctio quia. Voluptas et eius omnis officia saepe animi possimus. Velit voluptatem voluptas iusto non voluptatem sit. Explicabo molestias quo ut cupiditate et. Ut nemo consequatur ut perspiciatis voluptatem. At quasi aspernatur alias ad et et ad.
+Reiciendis harum deserunt voluptatem. Quod incidunt saepe omnis deserunt a et ut. Tempora ipsum omnis atque assumenda culpa cumque in quisquam.
+Blanditiis ad cupiditate quas. Voluptatem sint recusandae cumque alias in. Similique consequatur et et ut blanditiis a rerum.
+Quia fuga illum quis dignissimos sed. Voluptas explicabo enim ullam fuga. Voluptates et aut aut et eum dignissimos sunt.
+Deleniti voluptate in aut atque. Est voluptatum non doloremque. Sunt veritatis quia et alias ut. Eos dolor modi eaque nam corporis consectetur sit. Animi officiis sunt vel velit nihil pariatur esse. Expedita eveniet labore voluptatem vitae in quos temporibus corporis.
+
+## Basic operations review
+
+
+## Installing packages
+
+R language extends its capabilities by using third-party packages. These packages are properly stored and documented on the [Comprehensive R Archive Network](https://cran.r-project.org) (aka. CRAN), allowing the users to add new functions to the ones includes on base R.
+
+In this section you will be introduced to the functionality of several packages to be used during the workshop, commonly used to read, write, clean, manipulate, process and visualize data.
+
+### Tidyverse
+
+The `tidyverse` package is a collection of R packages designed for data science. All packages share an underlying design philosophy, grammar, and data structures. Tidyverse includes, but is not limited to these packages:
+
+* `tibble`: enables using an enhanced data structure format.
+* `ggplot2`: for creating charts and advanced visualizations.
+* `dplyr`: for data wrangling.
+* `tidyr`: for data reshaping.
+* `forcats`: enhances factors handling.
+* `stringr`: better string manipulation.
+* `readr`: for reading several data file formats.
+* `purrr`: for better functional programming.
+
+There are more packages sharing the `tidyverse` paradigm, its usage is often considered for state-of-the-art and modern R programming. 
+
+To install `tidyverse` package:
+```{r Install tidyverse}
+install.packages("tidyverse")
+```
+
+For further reference, visit the [tidyverse website](https://www.tidyverse.org) and the [official package documentation](https://cran.r-project.org/web/packages/tidyverse/).
+
+**Optional for Linux users**: When installing `tidyverse` for the first time on Linux, it may be needed to install previously some libraries using the Terminal. Run the next command if using Debian-based Linux and then try again installing `tidyverse`:
+```{bash Install system libraries for tidyverse}
+sudo apt install libcurl4-openssl-dev libssl-dev libxml2-dev
+```
+
+### Lubridate
+
+The `lubridate` package is used to make easier working with date-time formats and enable some new time-related functions in R. To install `lubridate` package:
+```{r Install lubridate package}
+install.packages("lubridate")
+```
+
+For further reference, visit the [lubridate website](https://lubridate.tidyverse.org) and the [official package documentation](https://cran.r-project.org/web/packages/lubridate/index.html).
+
+### ReadXL
+
+The `readxl` package is used for easy load and write data in Microsoft Excel format. To install `readxl` package:
+```{r Install readxl package}
+install.packages("readxl")
+```
+
+For further reference, visit the [readxl website](https://readxl.tidyverse.org) and the [official package documentation](https://cran.r-project.org/web/packages/readxl/).
+
+### Janitor
+
+The `janitor` package has simple functions for examining and cleaning dirty data, saving time on preparing data prior using it. To install `janitor` package:
+```{r Install janitor package}
+install.packages("janitor")
+```
+
+For further reference, visit the [janitor website](http://sfirke.github.io/janitor/) and the [official package documentation](https://cran.r-project.org/web/packages/janitor/index.html).
+
+### SF
+
+The `sf` package is used for enable *simple features*, a standardized way to encode spatial vector data and perform geometrical operations with it through GEOS library. Also allows using the GDAL library to read and write several geographic data formats like Shapefile, GeoPackage, GeoJSON, etc.
+
+To install `sf` package:
+```{r Install sf package}
+install.packages("sf")
+```
+
+For further reference, visit the [sf website](https://r-spatial.github.io/sf/) and the [official package documentation](https://cran.r-project.org/web/packages/sf/index.html).
+
+### Raster
+
+The `raster` package is used for reading, writing, manipulating, analyzing and modeling spatial data, mainly in raster format. To install `raster` package:
+```{r Install raster package}
+install.packages("raster")
+```
+
+For further reference, visit the [raster website](https://rspatial.org/raster/) and the [official package documentation](https://cran.r-project.org/web/packages/raster/index.html).
+
+### Spatstat
+
+The `spatstat` package is used for spatial statistics and analysing spatial point patterns in 2D (with some support for 3D and very basic support for space-time). To install `spatstat` package:
+```{r Install spatstat package}
+install.packages("spatstat")
+```
+
+For further reference, visit the [spatstat website](http://spatstat.org) and the [official package documentation](https://cran.r-project.org/web/packages/spatstat/index.html).
+
+### Tmap
+
+The `tmap` package is used for drawing thematic maps in a similar fashion to `ggplot2` grammar.
+
+To install `tmap` package:
+```{r Install tmap package}
+install.packages("tmap")
+```
+
+For further reference, visit the [tmap website](https://mtennekes.github.io/tmap/) and the [official package documentation](https://cran.r-project.org/web/packages/tmap/index.html).
+
+### Leaflet
+
+The `leaflet` package makes it easy to integrate and control interactive maps in R using the popular *Leaflet* JavaScript library for spatial data visualization.
+
+To install `leaflet` package:
+```{r Install leaflet package}
+install.packages("leaflet")
+```
+
+For further reference, visit the [leaflet website](https://rstudio.github.io/leaflet/) and the [official package documentation](https://cran.r-project.org/web/packages/leaflet/).
+
+
+## References
+
+* Wickham, H., & Grolemund, G. (2017). *R for data science: Import, tidy, transform, visualize and model data. https://r4ds.had.co.nz*. O'Reilly. 
