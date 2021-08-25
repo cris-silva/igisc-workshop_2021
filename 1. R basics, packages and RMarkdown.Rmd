@@ -7,20 +7,351 @@ date: "11/3/2021"
 
 ## Introduction
 
-Molestias repudiandae magnam saepe distinctio quia. Voluptas et eius omnis officia saepe animi possimus. Velit voluptatem voluptas iusto non voluptatem sit. Explicabo molestias quo ut cupiditate et. Ut nemo consequatur ut perspiciatis voluptatem. At quasi aspernatur alias ad et et ad.
-Reiciendis harum deserunt voluptatem. Quod incidunt saepe omnis deserunt a et ut. Tempora ipsum omnis atque assumenda culpa cumque in quisquam.
-Blanditiis ad cupiditate quas. Voluptatem sint recusandae cumque alias in. Similique consequatur et et ut blanditiis a rerum.
-Quia fuga illum quis dignissimos sed. Voluptas explicabo enim ullam fuga. Voluptates et aut aut et eum dignissimos sunt.
-Deleniti voluptate in aut atque. Est voluptatum non doloremque. Sunt veritatis quia et alias ut. Eos dolor modi eaque nam corporis consectetur sit. Animi officiis sunt vel velit nihil pariatur esse. Expedita eveniet labore voluptatem vitae in quos temporibus corporis.
+R is a programming language mainly aimed to statistical computing. It is a free software widely used for developing data analysis and more recently, for modern applications such as data science, machine learning or artificial intelligence.
 
-## Basic operations review
+In the field of geocomputation, R can be used for analyze, process, model and visualize geographic data by using the add-on packages available which extends the capabilities of the base language, enabling the user to use it as an effective Geographic Information System (GIS).
 
+## Objective
+
+The objective of this section is review the basic functions of R language in order to get familiar with its environment and syntax, install add-on packages to be used during the workshop and provide examples by doing through interactive RMarkdown notebooks.
+
+## Base R review
+
+### Getting help
+
+To get help of a particular function, use `help`:
+```{r Help of a function}
+help("for") # Also ?for can be used on R console or highlight the command and pressing F1 on RStudio
+```
+
+Search a term on the help files using `help.search`:
+```{r Search in help}
+help.search("control flow")
+```
+
+### Basic operators
+
+Example of addition:
+```{r Basic operators}
+34 + 56 # Addition
+45 - 13 # Substract
+34 * 0.14 # Multiply
+89.4 / 5 # Divide
+```
+
+Assign a variable with `<-` or `=`:
+```{r Numeric variable assign}
+my_number = 45
+my_number # Visualize variable value
+```
+
+```{r String variable assign}
+my_string <- "Hello world"
+my_string # Visualize variable value
+```
+
+### Vectors
+
+Create a vector using `c()`:
+```{r Create vector}
+my_vector <- c(5, 2, 4, 9, 8, 9, 1, 2, 2)
+my_vector
+```
+
+Create a simple integer sequence:
+```{r Create sequence}
+2:10
+```
+
+Create a complex sequence using `seq`:
+```{r Complex sequence vector}
+seq(from = 0, to = 10, by = 2.5)
+```
+
+Repeat a vector using `rep`:
+```{r Repeat vector}
+rep(1:3, times = 4) # Repeat vector n times
+rep(1:2, each = 3) # Repeat n times each value of the vector
+```
+
+Sort a vector values using `sort`:
+```{r Sort vector}
+sort(my_vector)
+sort(my_vector, decreasing = TRUE) # Decreasing order
+```
+
+Return reversed vector using `rev`:
+```{r Reverse vector}
+rev(my_vector)
+```
+
+Return count of values using `table`:
+```{r Count of vector values}
+table(my_vector)
+```
+
+Return unique values of the vector using `unique`:
+```{r Unique values in vector}
+unique(my_vector)
+```
+
+Select a particular element in a vector:
+```{r Select by index}
+my_vector[4] # Select the 4th element in my_vector
+```
+
+Select all elements but a particular one:
+```{r Select but index}
+my_vector[-4] # Select all but the 4th element in my_vector
+```
+
+Select a range of elements of a vector:
+```{r Select by range}
+my_vector[2:5] # Select the 2nd to 5th element in my_vector
+```
+
+Select all elements but a range:
+```{r Select but range}
+my_vector[-(2:5)] # Select all elements but the 2nd to 5th in my_vector
+```
+
+Select particular elements:
+```{r Select by particular indexes}
+my_vector[c(1,5)] # Select only 1st and 5th elements in my_vector
+```
+
+Select elements by value:
+```{r Select by value}
+my_vector[my_vector == 2] # Select elements equal to 2 in my_vector
+```
+
+Select elements by condition:
+```{r Select by condition}
+my_vector[my_vector < 3] # Select elements less than 3 in my_vector
+```
+
+Select elements by particular values:
+```{r Select particular indexes}
+my_vector[my_vector %in% c(1, 2, 5)]
+```
+
+### Conditions
+
+Assign two variables:
+```{r Variables to compare}
+a <- 5
+6 -> b # Reversed assign
+```
+
+Compare `a` and `b`:
+```{r Conditions with variables}
+a == b # Equal
+a != b # Not equal
+a > b # a greater than b
+a >= b # a greater than or equal to b
+a < b # a less than b
+a <= b # a less than or equal than b
+is.na(a) # Is missing (NA)
+is.null(b) # Is null (NULL)
+```
+
+Comparing vectors:
+```{r Conditions with vectors}
+my_vector > a # Compare each element in my_vector to a
+b %in% my_vector # Is b in any element of my_vector?
+```
+
+### Programming
+
+Repeat instructions in a loop using `for`:
+```{r For loop}
+for(i in 1:10) {
+  j <- i * 10
+  print(j)
+}
+```
+Repeat instructions in a condition-controlled loop using `while` (if condition is not well defined, it may loop infinitely):
+```{r While loop}
+while(i < 10) {
+  print(i)
+  i <- i + 1
+}
+```
+
+Run a code block when a condition is true, or optionally another code block when not with `ìf`:
+```{r If sentence}
+k <- 14
+if(k > 10) {
+  print("Variable k is greater than 10")
+} else {
+  print("Variable k is less or equal than 10")
+}
+```
+
+Create a function to reuse a code block multiple times using `function`:
+```{r Create function}
+calculate_percent <- function(part, total) {
+  percent <- part / total * 100
+  return(percent)
+}
+
+# Call the function:
+calculate_percent(part = 15, total = 234)
+calculate_percent(15, 234) # Bypassing parameter names
+```
+
+### Data Frames
+
+In R, a dataframe is a tightly coupled collection of variables built as a table where every column has a particular data type. Data frames are the fundamental data structure used by most of R modeling software. Create a data frame using the `data.frame` function:
+```{r Create a data frame}
+my_df <- data.frame(x = 1:5, y = c("A", "B", "C", "D", "E"))
+my_df 
+```
+
+It is possible to browse the full contents of the data frame using the `View` function (in RStudio, a new window will open):
+```{r View data frame}
+View(my_df)
+```
+
+If just a preview of the data frame is needed, use the `head` function to visualize the *n* first rows:
+```{r Head data frame}
+head(my_df, n = 3) # If n parameter is ommited, head will show the first 5 rows by default
+```
+
+You can also browse the dataframes using the "Environment" panel in RStudio.
+
+To access a particular row in a data frame, use the index between brackets ([Row, Column]):
+```{r Access row in data frame}
+my_df[1, ] # Omit column index to access entire row
+```
+
+To access a particular column in a data frame, use this syntax:
+```{r Access column in data frame by index}
+my_df[, 1] # Omit row index to access entire column values
+```
+
+The most common way to access values in a variable (column) is using the `$` separator:
+```{r Access column by variable name}
+my_df$y # Using variable name
+```
+
+Subset a particular element in a data frame using indexes:
+```{r Subset element in data frame}
+my_df[2, 2] # Access row 2, column 2
+```
+
+Understand the data frame dimensions with these functions:
+```{r Data set dimensions}
+dim(my_df) # Dimensions of data frame (row and column numbers)
+nrow(my_df) # Number of rows in data frame
+ncol(my_df) # Number of columns in data frame
+```
+
+Add a column using `cbind` function:
+```{r Add column to data frame}
+new_column <- data.frame(z = c(6:10)) # Must have the same rows than data frame
+my_df <- cbind(my_df, new_column)
+my_df
+```
+
+Add a row using `rbind` function:
+```{r Add row to data frame}
+new_row <- my_df[2, ] # Add a copy of row 2, must have same variable names else will add new columns with remaining names
+my_df <- rbind(my_df, new_row)
+my_df
+```
+
+### Working directory
+
+As a best practice, it is recommended to set a working directory to store scripts, notebooks and data for better organization and easier coding. Get the current working directory using `getwd` function:
+```{r Get working directory}
+getwd()
+```
+
+Set the working directory using the `setwd` function, write between quotes and autocomplete pressing Tab key to set the path to your downloaded workshop folder:
+```{r Set working directory}
+setwd("C:\iGISc") # Set path example on Windows
+# setwd("/Users/username/Documents/iGISc") # Set path example on macOS or Linux
+```
+Also, you can use projects in RStudio to set the working directory to the folder you are working in.
+
+### Read and write data
+
+R uses a special format with extension `.RData` to store data used during a session, save this session variables in a file:
+```{r Save variables as RData}
+save(my_vector, my_string, my_df, file = "Data/my_data.RData")
+```
+
+Load variables stored as `.RData` using function `load`:
+```{r Read variables from RData}
+load("Data/my_data.RData")
+```
+
+R also can save data in plain text formats such as delimited or standard CSV (comma separated values), using these functions:
+```{r Write data as plain text}
+write.table(my_df, file = "Data/my_df.txt", sep = "|") # Save data frame as delimited text using "|" as separator
+write.csv(my_df, file = "Data/my_df.csv") # Save data frame as CSV using "," as separator
+write.csv2(my_df, file = "Data/my_df2.csv") # Save data frame as CSV using ";" as separator (for countries where decimal point is ",")
+```
+
+Read the data stored as plain text and store it a new variable using these functions:
+```{r Read data from plain text}
+my_df_from_delimited <- read.csv("Data/my_df.txt", sep = "|")
+my_df_from_csv <- read.csv("Data/my_df.csv")
+my_df_from_csv2 <- read.csv2("Data/my_df.csv")
+
+# Visualize loaded datasets:
+my_df_from_delimited
+my_df_from_csv
+my_df_from_csv2
+```
+
+### Environment
+
+List all variables in the environment using `ls`:
+```{r List all variables}
+ls()
+```
+
+Remove a variable in the environment using `rm`:
+```{r Remove a variable}
+rm("my_number") # Remove a variable
+rm(list = ls()) # Remove all variables
+```
+
+You can also use the "Environment" panel in RStudio to browse and remove variables in your environment.
 
 ## Installing packages
 
 R language extends its capabilities by using third-party packages. These packages are properly stored and documented on the [Comprehensive R Archive Network](https://cran.r-project.org) (aka. CRAN), allowing the users to add new functions to the ones includes on base R.
 
 In this section you will be introduced to the functionality of several packages to be used during the workshop, commonly used to read, write, clean, manipulate, process and visualize data.
+
+To install a particular package from CRAN, use `install.packages`:
+```{r Install a package}
+install.packages("carData") # carData is a package containing sample data
+```
+
+Another option to load, install and update packages is using the "Packages" panel on RStudio. 
+
+Load a package for use in a session using `library` function:
+```{r Load a package}
+library(carData)
+```
+
+Use a particular function from a package without loading it writing the package name, double colon and then the desired function (the package must be already installed):
+```{r Call a particular function from package}
+utils::sessionInfo() # Use the sessionInfo function from utils package, browse available functions writing utils:: and pressing Tab key
+```
+
+Some packages includes sample data which can be loaded using the `data` function:
+```{r Load sample data from package}
+carData:: # Press Tab key to browse the sample datasets included in the package
+data(Salaries, package = "carData") # Load the Salaries dataset from package carData and store it as a variable
+Salaries # Visualize dataset
+```
+
+## Commonly used packages
 
 ### Tidyverse
 
@@ -45,7 +376,7 @@ install.packages("tidyverse")
 For further reference, visit the [tidyverse website](https://www.tidyverse.org) and the [official package documentation](https://cran.r-project.org/web/packages/tidyverse/).
 
 **Optional for Linux users**: When installing `tidyverse` for the first time on Linux, it may be needed to install previously some libraries using the Terminal. Run the next command if using Debian-based Linux and then try again installing `tidyverse`:
-```{bash Install system libraries for tidyverse}
+```{bash Install Linux libraries for tidyverse}
 sudo apt install libcurl4-openssl-dev libssl-dev libxml2-dev
 ```
 
