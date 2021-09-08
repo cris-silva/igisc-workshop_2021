@@ -376,7 +376,7 @@ install.packages("tidyverse")
 
 For further reference, visit the [tidyverse website](https://www.tidyverse.org) and the [official package documentation](https://cran.r-project.org/web/packages/tidyverse/).
 
-**Optional for Linux users**: When installing `tidyverse` for the first time on Linux, it may be needed to install previously some libraries using the Terminal. Run the next command if using Debian-based Linux and then try again installing `tidyverse`:
+**Note for Linux users**: When installing `tidyverse` for the first time on Linux, it may be needed to install previously some libraries using the Terminal. Run the next command if using Debian-based Linux and then try again installing `tidyverse`:
 ```{bash Install Linux libraries for tidyverse}
 sudo apt install libcurl4-openssl-dev libssl-dev libxml2-dev
 ```
@@ -416,6 +416,8 @@ To install `sf` package:
 ```{r Install sf package}
 install.packages("sf")
 ```
+
+**Note for macOS and Linux users**: Before installing the `sf` package, it may be necessary to install the GDAL and PROJ libraries on the system via Terminal. For details on how to do it, please refer to [the instructions provided in the sf website](https://r-spatial.github.io/sf/).
 
 For further reference, visit the [sf website](https://r-spatial.github.io/sf/) and the [official package documentation](https://cran.r-project.org/web/packages/sf/index.html).
 
