@@ -39,7 +39,7 @@ Example of addition:
 89.4 / 5 # Divide
 ```
 
-Assign a variable with `<-` or `=`:
+Assign a value to a variable with `<-` or `=`:
 ```{r Numeric variable assign}
 my_number = 45
 my_number # Visualize variable value
@@ -52,7 +52,7 @@ my_string # Visualize variable value
 
 ### Vectors
 
-Create a vector using `c()`:
+Vectors are basic data structures used in R to compute multiple values at once. Create a vector using `c()`:
 ```{r Create vector}
 my_vector <- c(5, 2, 4, 9, 8, 9, 1, 2, 2)
 my_vector
@@ -161,45 +161,6 @@ my_vector > a # Compare each element in my_vector to a
 b %in% my_vector # Is b in any element of my_vector?
 ```
 
-### Programming
-
-Repeat instructions in a loop using `for`:
-```{r For loop}
-for(i in 1:10) {
-  j <- i * 10
-  print(j)
-}
-```
-Repeat instructions in a condition-controlled loop using `while` (if condition is not well defined, it may loop infinitely):
-```{r While loop}
-while(i < 10) {
-  print(i)
-  i <- i + 1
-}
-```
-
-Run a code block when a condition is true, or optionally another code block when not with `ìf`:
-```{r If sentence}
-k <- 14
-if(k > 10) {
-  print("Variable k is greater than 10")
-} else {
-  print("Variable k is less or equal than 10")
-}
-```
-
-Create a function to reuse a code block multiple times using `function`:
-```{r Create function}
-calculate_percent <- function(part, total) {
-  percent <- part / total * 100
-  return(percent)
-}
-
-# Call the function:
-calculate_percent(part = 15, total = 234)
-calculate_percent(15, 234) # Bypassing parameter names
-```
-
 ### Data Frames
 
 In R, a dataframe is a tightly coupled collection of variables built as a table where every column has a particular data type. Data frames are the fundamental data structure used by most of R modeling software. Create a data frame using the `data.frame` function:
@@ -261,6 +222,46 @@ my_df <- rbind(my_df, new_row)
 my_df
 ```
 
+### Programming
+
+Repeat instructions in a loop using `for`:
+```{r For loop}
+for(i in 1:10) {
+  j <- i * 10
+  print(j)
+}
+```
+
+Repeat instructions in a condition-controlled loop using `while` (if condition is not well defined, it may loop infinitely):
+```{r While loop}
+while(i < 10) {
+  print(i)
+  i <- i + 1
+}
+```
+
+Run a code block when a condition is true, or optionally another code block when not with `ìf`:
+```{r If sentence}
+k <- 14
+if(k > 10) {
+  print("Variable k is greater than 10")
+} else {
+  print("Variable k is less or equal than 10")
+}
+```
+
+Create a function to reuse a code block multiple times using `function`:
+```{r Create function}
+calculate_percent <- function(part, total) {
+  percent <- part / total * 100
+  return(percent)
+}
+
+# Call the function:
+calculate_percent(part = 15, total = 234)
+calculate_percent(15, 234) # Bypassing parameter names
+```
+
 ### Working directory
 
 As a best practice, it is recommended to set a working directory to store scripts, notebooks and data for better organization and easier coding. Get the current working directory using `getwd` function:
@@ -270,7 +271,7 @@ getwd()
 
 Set the working directory using the `setwd` function, write between quotes and autocomplete pressing Tab key to set the path to your downloaded workshop folder:
 ```{r Set working directory}
-setwd("C:\iGISc") # Set path example on Windows
+# setwd("C:\iGISc") # Set path example on Windows
 # setwd("/Users/username/Documents/iGISc") # Set path example on macOS or Linux
 ```
 Also, you can use projects in RStudio to set the working directory to the folder you are working in.
@@ -436,7 +437,7 @@ install.packages("spatstat")
 
 For further reference, visit the [spatstat website](http://spatstat.org) and the [official package documentation](https://cran.r-project.org/web/packages/spatstat/index.html).
 
-### Tmap
+### TMap
 
 The `tmap` package is used for drawing thematic maps in a similar fashion to `ggplot2` grammar.
 
@@ -458,7 +459,8 @@ install.packages("leaflet")
 
 For further reference, visit the [leaflet website](https://rstudio.github.io/leaflet/) and the [official package documentation](https://cran.r-project.org/web/packages/leaflet/).
 
-
 ## References
 
-* Wickham, H., & Grolemund, G. (2017). *R for data science: Import, tidy, transform, visualize and model data. https://r4ds.had.co.nz*. O'Reilly. 
+* Xie, Y., Allaire, J. J., & Grolemund, G. (2018). *R markdown: The definitive guide.  [https://bookdown.org/yihui/rmarkdown/](https://bookdown.org/yihui/rmarkdown/)*. CRC Press.
+* Wickham, H., & Grolemund, G. (2017). *R for data science: Import, tidy, transform, visualize and model data. [https://r4ds.had.co.nz](https://r4ds.had.co.nz)*. O'Reilly.
+* *RStudio Cheatsheets*. (n.d.). Rstudio.com. Retrieved September 8, 2021, from [https://www.rstudio.com/resources/cheatsheets/](https://www.rstudio.com/resources/cheatsheets/)
