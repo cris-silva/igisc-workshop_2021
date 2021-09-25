@@ -13,7 +13,11 @@ It is possible to use the R language to read, write and manipulate data in vario
 
 ## Objective
 
-This workshop will analyze actual data provided by the Mexican government to study murders reported from December 2018 to June 2021. The objective of this section is to prepare the data for the analysis to be done later in the workshop, exemplifying the use of the different data wrangling functions that R packages provide us to read and write plain and spatial data, as well as examples of how to filter, sort, group and create new columns from existing ones.
+First, a review exercise of the main functions of the tidyverse package used for data management will be performed. For this purpose, the example dataset called `iris` (which is included in R base) will be used.
+
+This workshop will analyze actual data provided by the Mexican government to study murders reported from December 2018 to June 2021, and comparing those that occurred in Mexico City (CDMX) with those registered in the other states of the country. 
+
+Then, the second objective of this section is to prepare the data for the analysis to be done later in the workshop, exemplifying the use of the different data wrangling functions that R packages provide us to read and write plain and spatial data, as well as examples of how to filter, sort, group and create new columns from existing ones.
 
 ## Tidyverse review
 
@@ -23,7 +27,7 @@ data("iris") # This loads "iris" dataset on R environment
 iris # View data
 ```
 
-Load the `tidyverse` package that will be used to manipulate the data:
+Load the `tidyverse` package used to manipulate the data:
 ```{r Load tidyverse package}
 library(tidyverse)
 ```
@@ -47,14 +51,13 @@ iris %>%
   distinct(Species) # Group unique values
 ```
 
-
 ### Select variables
 
 Pick the `Sepal.Length` and `Species` variables using its names:
 ```{r Pick variables}
 iris %>% 
   select(Sepal.Length, Species) %>% # Pick variables
-  glimpse() # Show data structure
+  glimpse() # Show new data structure
 ```
 
 Pick `Sepal.Length`, `Sepal.Width` and `Species` variables and multiply them to create a new variable named `Sepal.Multiply` using `mutate` function:
@@ -103,7 +106,6 @@ iris %>%
   arrange(desc(Sepal.Length), Sepal.Multiply) # Sort rows
 ```
 
-
 ### Grouping and summarizing data
 
 To create categorical groups using variables, use the `group_by` function:
@@ -144,9 +146,11 @@ iris %>%
   ungroup()
 ```
 
-## Reading data
+## Reading data for analysis
 
 In order to carry out the following exercises, we will use open data on crime incidence provided by *Secretariado Ejecutivo del Sistema Nacional de seguridad Pública (SESNSP)*, publicly available on the open data portal of the Mexican government at  [https://www.datos.gob.mx/busca/dataset/incidencia-delictiva-del-fuero-comun](https://www.datos.gob.mx/busca/dataset/incidencia-delictiva-del-fuero-comun). 
+
+This data aggregates crime information at the state level and will be used in the workshop to compare homicide levels in CDMX with other states in the country.
 
 Load the `lubridate` package to easy handle date and datetime types in the dataset, and the `janitor` package to make some cleaning processes to the data:
 
@@ -162,41 +166,41 @@ data_source <- "Data/IDEFC_NM.csv" # From downloaded file
 
 offenses <- 
   read_csv(file = data_source,
-           locale = locale(encoding = "WINDOWS-1252")) %>%  # locale parameter required in macOS or Linux, data comes from Windows 
+           locale = locale(encoding = "WINDOWS-1252")) %>%  # locale parameter required in macOS or Linux, because data comes from Windows 
   clean_names() %>% # Lower case, replace whitespaces with '_' and replace special characters
   glimpse()  # Allows to preview data structure and contents
 ```
 
 ## Preparing data
 
-In order to filtering by date, it is necessary to have a `month` column in date format in a *longer* format. To achieve this, the next chunk will execute the next operations:
+In order to filtering by date, it is necessary to have a `month` column in date format in a *longer* table shape. To achieve this, the next chunk will execute the next operations:
 
-1. Transform structure to *longer* format, storing each month name (in spanish) from column title in a variable named `month_name` and its values in a variable named `total` using `pivot_longer` function:.
-2. Get the month number from `month_name` using `case_when` function to store the corresponding numeric value it on a new variable named `month_number`.
-3. Build the month in date format using `ano` (year), `month_number` and the number 1 to assume the first day using the `lubridate` function `make_date` to create a new variable called `month`.
-4. Finally omit the unnecessary variables `month_name`, `month_number`, `ano` using the function `select` and the `-` preffix to exclude them in the dataset.
+1. Transform structure to *longer* format, storing each month name (in spanish) from column title in a variable named `mes_nombre` and its values in a variable named `total` using `pivot_longer` function:.
+2. Get the month number from `mes_nombre` using `case_when` function to store the corresponding numeric value it on a new variable named `mes_numero`.
+3. Build the month in date format using `ano` (year), `mes_numero` and the number 1 to assume the first day using the   `make_date` function to create a new variable called `mes`.
+4. Finally omit the unnecessary variables `mes_nombre`, `mes_numero`, `ano` using the function `select` and the `-` preffix to exclude them in the dataset.
 
 Execute these operations one by one linking them with *pipes* (`%>`): 
 ```{r Clean and reshape national data}
 offenses <-
   offenses %>% 
   pivot_longer(cols = 8:19,
-               names_to = "month_name",
+               names_to = "mes_nombre",
                values_to = "total") %>% 
-  mutate(month_number = case_when(month_name == "enero" ~ 1,
-                                  month_name == "febrero" ~ 2,
-                                  month_name == "marzo" ~ 3,
-                                  month_name == "abril" ~ 4,
-                                  month_name == "mayo" ~ 5,
-                                  month_name == "junio" ~ 6,
-                                  month_name == "julio" ~ 7,
-                                  month_name == "agosto" ~ 8,
-                                  month_name == "septiembre" ~ 9,
-                                  month_name == "octubre" ~ 10,
-                                  month_name == "noviembre" ~ 11,
-                                  month_name == "diciembre" ~ 12)) %>%
-  mutate(month = make_date(ano, month_number, 1)) %>% 
-  select(-ano, -month_name, -month_number) %>% 
+  mutate(mes_numero = case_when(mes_nombre == "enero" ~ 1,
+                                  mes_nombre == "febrero" ~ 2,
+                                  mes_nombre == "marzo" ~ 3,
+                                  mes_nombre == "abril" ~ 4,
+                                  mes_nombre == "mayo" ~ 5,
+                                  mes_nombre == "junio" ~ 6,
+                                  mes_nombre == "julio" ~ 7,
+                                  mes_nombre == "agosto" ~ 8,
+                                  mes_nombre == "septiembre" ~ 9,
+                                  mes_nombre == "octubre" ~ 10,
+                                  mes_nombre == "noviembre" ~ 11,
+                                  mes_nombre == "diciembre" ~ 12)) %>%
+  mutate(mes = make_date(ano, mes_numero, 1)) %>% 
+  select(-ano, -mes_nombre, -mes_numero) %>% 
   glimpse()
 ```
 
@@ -205,8 +209,10 @@ In order to learn the crime classification needed for the analysis, create a lis
 crime_list <-
   offenses %>% 
   distinct(bien_juridico_afectado, tipo_de_delito, subtipo_de_delito, modalidad) %>% # Keep unique values of the columns
-  arrange(bien_juridico_afectado, tipo_de_delito, subtipo_de_delito, modalidad) %>% # Sort values, ascending
-  glimpse()
+  arrange(bien_juridico_afectado, tipo_de_delito, subtipo_de_delito, modalidad) # Sort values, ascending
+
+# Show crime categories table:
+crime_list
 ```
 
 Filter data to keep only with the data corresponding to `Homicidio` (murder) and its subcategories, that happened from december 2018 to june 2021:
@@ -216,15 +222,15 @@ month_end <- make_date(2020, 6, 1)
 
 murders <-
   offenses %>% 
-  filter(tipo_de_delito %in% c("Homicidio", "Feminicidio") & between(month, month_begin, month_end)) %>% 
+  filter(tipo_de_delito == "Homicidio" & between(mes, month_begin, month_end)) %>% 
   glimpse()
 ```
 
-Group and summarize murder totals by state:
+Group and summarize murder totals by `clave_ent` (state ID), `entidad` (state), and `mes` (month):
 ```{r Grouping and summarizing data}
 murders_by_state <-
   murders %>% 
-  group_by(clave_ent, entidad) %>% 
+  group_by(clave_ent, entidad, mes) %>% 
   summarize(murders = sum(total, na.rm = TRUE)) %>% 
   ungroup() %>% 
   glimpse()
@@ -236,11 +242,9 @@ write_csv(murders_by_state, file = "Data/murders_by_state.csv")
 # write_excel_csv(muders_by_state, file = "Data/murders_by_state.csv") # Use this if data will be also used in Excel
 ```
 
-
 ## Preparing spatial data
 
-Explicación De dónde vienen
-https://datos.cdmx.gob.mx/dataset/carpetas-de-investigacion-fgj-de-la-ciudad-de-mexico
+The data that will be used to study murders in CDMX are obtained from the open data portal of the City Government, available at (https://datos.cdmx.gob.mx/dataset/carpetas-de-investigacion-fgj-de-la-ciudad-de-mexico)[https://datos.cdmx.gob.mx/dataset/carpetas-de-investigacion-fgj-de-la-ciudad-de-mexico]. The records of reported crimes from this dataset are disaggregated at the level of detail and have the coordinates of the place where they occurred, which allows us to use this information to create a geographic layer of points that will be useful for the spatial analysis that will be performed later in this workshop.
 
 R uses several add-on packages for loading, building and handling spatial data. To do so, load `sf` and `tmap` packages:
 ```{r Load spatial handling and visualization libraries}
@@ -248,7 +252,7 @@ library(sf) # For spatial data manipulation
 library(tmap) # For creating thematic maps
 ```
 
-By using `sf` package it is possible to read plain text data with geometry such as coordinates o well-known-text (WKT), and then convert it to *simple features* (spatial data) following the next instructions. Read the plain text data using `read_csv` function:
+By using `sf` package it is possible to read plain text data with geometry such as coordinates o well-known-text (WKT), and then convert it to *simple features* (spatial data) following the next instructions. First, read the plain text data using `read_csv` function:
 ```{r Read data to be spatialized}
 sf_data_source <- "Data/carpetas_completa_julio_2021.csv.zip" # read_csv function can read compressed ZIP files
 
@@ -263,26 +267,27 @@ Identify murder categories on data:
 crimes_list_cdmx <- 
   offenses_cdmx %>% 
   distinct(categoria_delito) %>% 
-  arrange(categoria_delito) %>% 
-  glimpse()
+  arrange(categoria_delito)
+
+crimes_list_cdmx
 ```
 
-Filter murder data for the same period of time, in this dataset the column `fecha_hechos` (event date) will be used:
+Filter murder data for the same period of time. In this dataset the variables `categoria_delito` (offense catogory) and `fecha_hechos` (event date) will be used for subsetting:
 ```{r Subset data for the city}
 murders_cdmx <-
   offenses_cdmx %>% 
-  mutate(month = date(fecha_hechos)) %>% # Create a date column for "month" from datetime column "fecha_hechos" in order to filter
-  filter(categoria_delito == "HOMICIDIO DOLOSO" & between(month, month_begin, month_end)) %>% 
+  mutate(mes = date(fecha_hechos)) %>% # Create a date column for "month" from datetime column "fecha_hechos" in order to filter
+  filter(categoria_delito == "HOMICIDIO DOLOSO" & between(mes, month_begin, month_end)) %>% 
   glimpse()
 ```
 
-This dataset uses a WGS84 geographic coordinate reference system (CRS). Use the coordinates contained in columns `longitud` (longitude) and `latitud` (latitude) to build point geometries and convert dataset to *simple features* using `st_as_sf` and `st_set_crs` functions:
+This dataset uses a WGS84 geographic coordinate reference system (CRS), go to [https://epsg.io](https://epsg.io) for further info about EPSG codes and projections. Use the coordinates contained in columns `longitud` (longitude) and `latitud` (latitude) to build point geometries and convert dataset to *simple features* using `st_as_sf` and `st_set_crs` functions:
 ```{r Convert dataset to spatial}
 murders_cdmx <-
   murders_cdmx %>% 
   st_as_sf(coords = c("longitud", "latitud"), # Set column names with coordinates
            na.fail = FALSE) %>% # Avoid conversion to stop if exists rows with no coordinates and leave them as empty geometries
-  st_set_crs(4326) %>% # Set projection using WGS84 EPSG code
+  st_set_crs(4326) %>% # Set projection using WGS84 EPSG code 
   glimpse()
 ```
 
@@ -293,7 +298,7 @@ Quickly preview the spatialized data using function `qtm`:
 qtm(murders_cdmx) # Create a "Quick Thematic Map"
 ```
 
-It is possible to write a file with the spatialized data in *ESRI Shapefile* format but not recommended because this will not store correctly the datetime columns. Instead it is recommended use a more modern format like *GeoPackage*. Save data in a spatial format, using `sf_write` function (will be used later in the workshop):
+It is possible to write a file with the spatialized data in *ESRI Shapefile* format, but not recommended because this will not store correctly the datetime columns. Instead it is recommended use a more modern format like *GeoPackage*. Save data in a spatial format, using `sf_write` function (will be used later in the workshop):
 
 ```{r Write spatialized data in a file}
 st_write(murders_cdmx, dsn = "Data/murders_cdmx.shp", delete_dsn = TRUE) # Save as Shapefile, not recommended if dataset has datetime columns
