@@ -21,6 +21,11 @@ Then, the second objective of this section is to prepare the data for the analys
 
 ## Tidyverse review
 
+First of all, clear all objects from the environment:
+```{r Clean environment}
+rm(list = ls())
+```
+
 Load `iris` sample data built-in in R:
 ```{r Load sample dataset}
 data("iris") # This loads "iris" dataset on R environment
