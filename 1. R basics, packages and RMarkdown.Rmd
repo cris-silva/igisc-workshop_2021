@@ -29,6 +29,10 @@ Search a term on the help files using `help.search`:
 help.search("control flow")
 ```
 
+### Data types
+
+(Data types)
+
 ### Basic operators
 
 Example of addition:
@@ -52,7 +56,7 @@ my_string # Visualize variable value
 
 ### Vectors
 
-Vectors are basic data structures used in R to compute multiple values at once. Create a vector using `c()`:
+Vectors are basic data structures used in R to compute multiple values at once and stores elements with the same data type . Create a vector using `c()`:
 ```{r Create vector}
 my_vector <- c(5, 2, 4, 9, 8, 9, 1, 2, 2)
 my_vector
@@ -95,7 +99,7 @@ Return unique values of the vector using `unique`:
 unique(my_vector)
 ```
 
-Select a particular element in a vector:
+Select a particular element in a vector (indexing starts from 1):
 ```{r Select by index}
 my_vector[4] # Select the 4th element in my_vector
 ```
@@ -234,6 +238,7 @@ for(i in 1:10) {
 
 Repeat instructions in a condition-controlled loop using `while` (if condition is not well defined, it may loop infinitely):
 ```{r While loop}
+i <- 1
 while(i < 10) {
   print(i)
   i <- i + 1
@@ -274,6 +279,7 @@ Set the working directory using the `setwd` function, write between quotes and a
 # setwd("C:\iGISc") # Set path example on Windows
 # setwd("/Users/username/Documents/iGISc") # Set path example on macOS or Linux
 ```
+
 Also, you can use projects in RStudio to set the working directory to the folder you are working in.
 
 ### Read and write data
@@ -299,7 +305,7 @@ Read the data stored as plain text and store it a new variable using these funct
 ```{r Read data from plain text}
 my_df_from_delimited <- read.csv("Data/my_df.txt", sep = "|")
 my_df_from_csv <- read.csv("Data/my_df.csv")
-my_df_from_csv2 <- read.csv2("Data/my_df.csv")
+my_df_from_csv2 <- read.csv2("Data/my_df2.csv")
 
 # Visualize loaded datasets:
 my_df_from_delimited
@@ -316,7 +322,7 @@ ls()
 
 Remove a variable in the environment using `rm`:
 ```{r Remove a variable}
-rm("my_number") # Remove a variable
+rm("my_df") # Remove a variable
 rm(list = ls()) # Remove all variables
 ```
 
@@ -347,7 +353,7 @@ utils::sessionInfo() # Use the sessionInfo function from utils package, browse a
 
 Some packages includes sample data which can be loaded using the `data` function:
 ```{r Load sample data from package}
-carData:: # Press Tab key to browse the sample datasets included in the package
+#carData:: # Press Tab key to browse the sample datasets included in the package
 data(Salaries, package = "carData") # Load the Salaries dataset from package carData and store it as a variable
 Salaries # Visualize dataset
 ```
