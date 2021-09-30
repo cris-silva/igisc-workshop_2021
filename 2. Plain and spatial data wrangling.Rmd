@@ -231,12 +231,12 @@ murders <-
   glimpse()
 ```
 
-Group and summarize murder totals by `clave_ent` (state ID), `entidad` (state), and `mes` (month):
+Group and summarize murder totals in a new variable `homicidios` (murders) by `clave_ent` (state ID), `entidad` (state), and `mes` (month):
 ```{r Grouping and summarizing data}
 murders_by_state <-
   murders %>% 
   group_by(clave_ent, entidad, mes) %>% 
-  summarize(murders = sum(total, na.rm = TRUE)) %>% 
+  summarize(homicidios = sum(total, na.rm = TRUE)) %>% 
   ungroup() %>% 
   glimpse()
 ```
