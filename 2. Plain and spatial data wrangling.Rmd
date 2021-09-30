@@ -153,12 +153,9 @@ iris %>%
 
 ## Reading data for analysis
 
-In order to carry out the following exercises, we will use open data on crime incidence provided by *Secretariado Ejecutivo del Sistema Nacional de seguridad Pública (SESNSP)*, publicly available on the open data portal of the Mexican government at  [https://www.datos.gob.mx/busca/dataset/incidencia-delictiva-del-fuero-comun](https://www.datos.gob.mx/busca/dataset/incidencia-delictiva-del-fuero-comun). 
-
-This data aggregates crime information at the state level and will be used in the workshop to compare homicide levels in CDMX with other states in the country.
+In order to carry out the following exercises, we will use open data on crime incidence provided by *Secretariado Ejecutivo del Sistema Nacional de seguridad Pública (SESNSP)*, publicly available on the open data portal of the Mexican government at  [https://www.datos.gob.mx/busca/dataset/incidencia-delictiva-del-fuero-comun](https://www.datos.gob.mx/busca/dataset/incidencia-delictiva-del-fuero-comun). This data aggregates crime information at the state level and will be used in the workshop to compare murder levels in CDMX with other states in the country. 
 
 Load the `lubridate` package to easy handle date and datetime types in the dataset, and the `janitor` package to make some cleaning processes to the data:
-
 ```{r Load libraries for date handling and cleaning}
 library(lubridate)
 library(janitor)
@@ -220,7 +217,7 @@ crime_list <-
 crime_list
 ```
 
-Filter data to keep only with the data corresponding to `Homicidio` (murder) and its subcategories, that happened from december 2018 to june 2021:
+Filter to keep only with the data corresponding to `Homicidio` (murder) and its subcategories, that happened from december 2018 to june 2021:
 ```{r Subset data}
 month_begin <- make_date(2018, 12, 1)
 month_end <- make_date(2020, 6, 1)
