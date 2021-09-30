@@ -11,6 +11,11 @@ date: "11/3/2021"
 
 ## Data preparation
 
+First of all, clear all objects from the environment:
+```{r Clean environment}
+rm(list = ls())
+```
+
 Load the packages to be used:
 ```{r Load packages}
 library(tidyverse)
