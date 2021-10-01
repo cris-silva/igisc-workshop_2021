@@ -454,6 +454,12 @@ To install `tmap` package:
 install.packages("tmap")
 ```
 
+Also, install additional tools for `tmap` with `tmaptools`:
+
+```{r Install tmaptools package}
+install.packages("tmaptools")
+```
+
 For further reference, visit the [tmap website](https://mtennekes.github.io/tmap/) and the [official package documentation](https://cran.r-project.org/web/packages/tmap/index.html).
 
 ### Leaflet
@@ -472,3 +478,4 @@ For further reference, visit the [leaflet website](https://rstudio.github.io/lea
 * Xie, Y., Allaire, J. J., & Grolemund, G. (2018). *R markdown: The definitive guide.  [https://bookdown.org/yihui/rmarkdown/](https://bookdown.org/yihui/rmarkdown/)*. CRC Press.
 * Wickham, H., & Grolemund, G. (2017). *R for data science: Import, tidy, transform, visualize and model data. [https://r4ds.had.co.nz](https://r4ds.had.co.nz)*. O'Reilly.
 * *RStudio Cheatsheets*. (n.d.). Rstudio.com. Retrieved September 8, 2021, from [https://www.rstudio.com/resources/cheatsheets/](https://www.rstudio.com/resources/cheatsheets/)
+* Tennekes, Martijn. (2018). *tmap : Thematic Maps in R*. Journal of Statistical Software. 84. 10.18637/jss.v084.i06, from [https://www.researchgate.net/publication/324652152_tmap_Thematic_Maps_in_R/fulltext/5ad9e7eb0f7e9b28593cf867/tmap-Thematic-Maps-in-R.pdf] (https://www.researchgate.net/publication/324652152_tmap_Thematic_Maps_in_R/fulltext/5ad9e7eb0f7e9b28593cf867/tmap-Thematic-Maps-in-R.pdf)
