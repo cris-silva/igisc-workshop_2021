@@ -246,6 +246,8 @@ write_csv(murders_by_state, file = "Data/murders_by_state.csv")
 
 ## Preparing spatial data
 
+### CDMX offenses data by point
+
 The data that will be used to study murders in CDMX are obtained from the open data portal of the City Government, available at (https://datos.cdmx.gob.mx/dataset/carpetas-de-investigacion-fgj-de-la-ciudad-de-mexico)[https://datos.cdmx.gob.mx/dataset/carpetas-de-investigacion-fgj-de-la-ciudad-de-mexico]. The records of reported crimes from this dataset are disaggregated at the level of detail and have the coordinates of the place where they occurred, which allows us to use this information to create a geographic layer of points that will be useful for the spatial analysis that will be performed later in this workshop.
 
 R uses several add-on packages for loading, building and handling spatial data. To do so, load `sf` and `tmap` packages:
@@ -254,7 +256,7 @@ library(sf) # For spatial data manipulation
 library(tmap) # For creating thematic maps
 ```
 
-By using `sf` package it is possible to read plain text data with geometry such as coordinates o well-known-text (WKT), and then convert it to *simple features* (spatial data) following the next instructions. First, read the plain text data using `read_csv` function:
+By using `sf` package it is possible to read plain text data with geometry such as coordinates o **well-known-text** (WKT), and then convert it to *simple features* (spatial data) following the next instructions. First, read the plain text data using `read_csv` function:
 ```{r Read data to be spatialized}
 sf_data_source <- "Data/carpetas_completa_julio_2021.csv.zip" # read_csv function can read compressed ZIP files
 
@@ -274,12 +276,12 @@ crimes_list_cdmx <-
 crimes_list_cdmx
 ```
 
-Filter murder data for the same period of time. In this dataset the variables `categoria_delito` (offense catogory) and `fecha_hechos` (event date) will be used for subsetting:
+Filter murder data for the same period of time. In this dataset the variables `categoria_delito` (offense category) and `fecha_hechos` (event date) will be used for subsetting:
 ```{r Subset data for the city}
 murders_cdmx <-
   offenses_cdmx %>% 
-  mutate(mes = date(fecha_hechos)) %>% # Create a date column for "month" from datetime column "fecha_hechos" in order to filter
-  filter(categoria_delito == "HOMICIDIO DOLOSO" & between(mes, month_begin, month_end)) %>% 
+  mutate(fecha = date(fecha_hechos)) %>% # Create a date column for "date" from datetime column "fecha_hechos" in order to filter
+  filter(categoria_delito == "HOMICIDIO DOLOSO" & between(fecha, month_begin, month_end)) %>% 
   glimpse()
 ```
 
@@ -288,7 +290,8 @@ This dataset uses a WGS84 geographic coordinate reference system (CRS), go to [h
 murders_cdmx <-
   murders_cdmx %>% 
   st_as_sf(coords = c("longitud", "latitud"), # Set column names with coordinates
-           na.fail = FALSE) %>% # Avoid conversion to stop if exists rows with no coordinates and leave them as empty geometries
+           na.fail = FALSE, # Leave rows without coordinates as empty geometries
+           remove = FALSE) %>% # Keep coordinates columns 
   st_set_crs(4326) %>% # Set projection using WGS84 EPSG code 
   glimpse()
 ```
@@ -307,6 +310,67 @@ st_write(murders_cdmx, dsn = "Data/murders_cdmx.shp", delete_dsn = TRUE) # Save 
 st_write(murders_cdmx, dsn = "Data/murders_cdmx.gpkg", delete_dsn = TRUE) # Save as Geopackage, recommended
 ```
 
+### National offenses data by state polygons
+
+Later in this workshop it will be necessary to compare between states using some types of offenses related to murders such as extortions and kidnapping, so it is required to build a spatial layer combining the Mexico states layer with this numbers and the population by states to calculate offense rates by 10,000 inhabitants in order to make a fair comparison.
+
+First we need to get the population data, so we can refer to the information on the 2020 Population and Housing Census freely provided by *Instituto Nacional de Estadística, Geografía e Informática (INEGI)* on its website at [https://www.inegi.org.mx/programas/ccpv/2020/default.html#Resultados_generales](https://www.inegi.org.mx/programas/ccpv/2020/default.html#Resultados_generales). For the convenience of the workshop, this dataset is already processed in the file `mexico_population_2020.csv` in the `Data` folder. Read the population by states dataset, just keep the variables `cve_ent` (state ID) and `total` (total population) and rename variable `total` to `poblacion` (population) using the `rename` function to make it more readable:
+```{r Read Mexico population by states}
+population <-
+  read_csv("Data/mexico_population_2020.csv") %>% 
+  select(cve_ent, poblacion = total) %>% 
+  glimpse()
+```
+
+We need the layer of Mexican states provided also by the INEGI which can be freely downloaded from [their website](https://www.inegi.org.mx/app/biblioteca/ficha.html?upc=889463776079). For the convenience of this workshop, a preprocessed copy of this layer is provided as a geopackage file named `mexico_states.gpkg` and stored in the `Data` folder. Read it as an `sf` spatial object named `states`, using `st_read` function and keeping just `id_estado` variable:
+```{r Read Mexico states layer}
+mexico_states <- 
+  st_read("Data/mexico_states.gpkg") %>% 
+  select(id_estado) %>% 
+  glimpse()
+```
+
+Preview the states polygons layer using the `qtm` function:
+```{r}
+qtm(mexico_states) # Preview spatial data using a "quick thematic map" (qtm)
+```
+
+To add the required data with the spatial layer, follow the next data wrangling:
+
+1. Get the data for extortion (*Extorsión*), kidnapping (*Secuestro*) and murders (*Homicidio doloso*) by filtering the previously obtained `offenses` dataset.
+2. Create a new variable named `columna` to label by offense type.
+3. Group by `clave_ent` (state ID), `entidad` (state) and `columna`, summarizing the total offenses in a new variable named `total`.
+4. Combine with the `population` dataset matching `clave_ent` and `cve_ent` (state IDs) variables in both tibbles using the `left_join` function.
+5. Transform to wide table expanding the `columna` variable to get a new variable for each offense type.
+6. Calculate the offense rate per 10,000 inhabitants for each offense type.
+7. Add the data to the `mexico_states` layer, combining with `left_join` where `clave_ent` and `id_estado` (state IDs) matches. 
+```{r}
+states_offenses <-
+  offenses %>% 
+  filter(tipo_de_delito %in% c("Extorsión", "Secuestro") | subtipo_de_delito == "Homicidio doloso") %>% 
+  mutate(columna = case_when(tipo_de_delito == "Extorsión" ~ "extorsion",
+                             tipo_de_delito == "Secuestro" ~ "secuestro",
+                             tipo_de_delito == "Homicidio" ~ "homicidio")) %>% 
+  group_by(clave_ent, entidad, columna) %>% 
+  summarize(total = sum(total, na.rm = T)) %>% 
+  ungroup() %>% # Remove grouping to flatten the tibble and keep processing
+  left_join(population, by = c("clave_ent" = "cve_ent")) %>% 
+  pivot_wider(names_from = columna, values_from = total) %>% 
+  mutate(ext_10khab = extorsion / poblacion * 10000,
+         sec_10khab = secuestro / poblacion * 10000,
+         hom_10khab = homicidio / poblacion * 10000) %>% 
+  left_join(mexico_states, by = c("clave_ent" = "id_estado")) %>% 
+  glimpse()
+```
+
+Finally, save the resulting layer with data in a *Geopackage*:
+```{r}
+states_offenses %>% 
+  st_write("Data/states_offenses.gpkg", delete_dsn = TRUE)
+```
+
+## Available spatial formats to read/write
+
 The `st_write` function uses GDAL/OGR libraries to save data, and can write and read every file format available in their drivers. To see a list of available formats to read and write, use the `st_drivers` function:
 ```{r List available read and write formats}
 st_drivers()
@@ -316,4 +380,5 @@ st_drivers()
 
 * Wickham, H., & Grolemund, G. (2017). *R for data science: Import, tidy, transform, visualize and model data. [https://r4ds.had.co.nz](https://r4ds.had.co.nz)*. O'Reilly.
 * Lovelace, R., Nowosad, J., & Muenchow, J. (2019), *Geocomputation with R. [https://geocompr.robinlovelace.net](https://geocompr.robinlovelace.net)*. CRC Press.
+* Tennekes, M., Nowosad, J. (2021). *Elegant and informative maps with tmap.* Retrieved September 8, 2021, from [https://r-tmap.github.io/tmap-book/](https://r-tmap.github.io/tmap-book/)
 * Engel, C. (2019). *Using Spatial Data with R.* cengel.github.io. Retrieved September 8, 2021, from [https://cengel.github.io/R-spatial/](https://cengel.github.io/R-spatial).
