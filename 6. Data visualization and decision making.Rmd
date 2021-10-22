@@ -1,0 +1,308 @@
+---
+title: "6. Data visualization and decision making"
+author: "Ana J. Alegre (jalegre@centrogeo.edu.mx), Cristian Silva (csilva@centrogeo.edu.mx)"
+output: html_notebook
+date: "11/4/2021"
+---
+
+## Introduction
+
+Data visualization makes it possible to communicate what the information means in a clear way to multiple users. Through the use of visual contexts, learning from the results of an analysis is useful to drive action and data-driven decision making. There are different packages in R that allow us to build different types of visualizations such as graphs, diagrams or maps, in an efficient and simple way.
+
+## Objective
+
+In this section, some examples of visualizations will be built from the data preprocessed in the previous sections and these will be interpreted to propose some possible actions to address the murder problem that was established as the main objective at the beginning of this workshop.
+
+## Data preparation
+
+First of all, clear all objects from the environment:
+```{r Clean environment}
+rm(list = ls())
+```
+
+Load the packages to be used in this session:
+```{r Load packages}
+library(tidyverse)
+library(sf)
+library(raster)
+library(DT)
+library(tmap)
+library(leaflet)
+```
+
+Read the previously prepared dataset for murders by state and month (`murders_by_state.csv`):
+```{r Read murders dataset by state}
+murders_by_state <-
+  read_csv("Data/murders_by_state.csv") %>% 
+  glimpse()
+```
+
+## Trending line
+
+In order to visualize the national trending of murders, group the dataset `murders_by_state` by month and summarize all the total murders:
+```{r Prepare data series}
+murders_by_month <-
+  murders_by_state %>% 
+  group_by(mes) %>% 
+  summarize(homicidios_total = sum(homicidios)) %>% 
+  ungroup()
+
+# Visualize series:
+murders_by_month
+```
+
+Build a line plot with the `murders_by_month` dataset using `ggplot2`:
+```{r Line plot for country data}
+murders_by_month %>% 
+  ggplot(aes(x = mes, y = homicidios_total)) + # Create a empty plot using mes as x and murders as y
+  geom_line() + # Add the trending line
+  geom_smooth() + # Add a regression line
+  labs(title = "Murders trending in Mexico",
+       subtitle = "December 2018 to June 2021",
+       x = "Month",
+       y = "Total murders") # Add titles and axis labels
+```
+
+Repeat the steps below to build a trending line plot now using only the CDMX data to compare it with the national trending. This time, because of the filter, it is not required to group data and it is possible to code all the process in one block using pipes:
+```{r Line plot for CDMX data}
+murders_by_state %>%
+  filter(entidad == "Ciudad de México") %>% # Filter data for CDMX
+  ggplot(aes(x = mes, y = homicidios)) + # Create a empty plot using mes as x and murders as y
+  geom_line() + # Add the trending line
+  geom_smooth() + # Add a regression line
+  labs(title = "Murders trending in CDMX",
+       subtitle = "December 2018 to June 2021",
+       x = "Month",
+       y = "Total murders") # Add titles and axis labels
+```
+
+As can be seen in both graphs, during the period from December 2018 to June 2021 the murders trend at the national level has been trending downward in recent months. Also in the CDMX murders are trending down during the period with some increases during the first months of this year.
+
+## Choropleth map
+
+Choropleth maps are used to easily visualize variations in quantities by coloring polygons. In this case, this kind of maps can be useful to compare murders per 10,000 inhabitants for each state in Mexico. To achieve this we will use the states layer associated with crimes data `state_offenses.gpkg`, created previously on section 2:
+```{r Read states layer with crime rates data}
+states_offenses <-
+  st_read("Data/states_offenses.gpkg") %>% 
+  glimpse()
+```
+
+Then, build a choropleth map with the outcomes and compare murder rates between states, using the package `tmap`:
+```{r Choropleth map with murder rates}
+tm_shape(states_offenses) + # Create an empty map
+  tm_polygons("hom_10khab",
+              title = "Murders per 10K inhabitants") + # Add states polygon layer using hom_10khab data
+  tm_layout(main.title = "Most violent states in Mexico, Dec. 2018 to Jun. 2021") +  # Add a title to the map
+  tm_credits("Data from INEGI and SESNSP.",
+             position = c("left", "bottom")) # Add sources
+```
+
+## Choropleth hexgrid map
+
+Let's make a variation of the choropleth map now using a *hexgrid* to help visually comparing states using same size hexagons and representing a simplified version of the states map.
+
+Now the `rmapshaper` and `geogrid` packages are to be used to build the hexagrid, so first of all it is necessary to remove all islands from the polygons layer to ensure having just contiguous states to be represented by hexagons. To remove islands from the `states_offenses` layer, use the `ms_filter_islands` to remove every island with less than 1,500 vertices for example:
+```{r Remove islands from states layer}
+library(rmapshaper)
+library(geogrid)
+
+states_without_islands <-
+  states_offenses %>% 
+  ms_filter_islands(min_vertices = 1500)
+
+# Preview states layer without islands:
+qtm(states_without_islands)
+```
+
+Next, use the `calculate_grid` function with different seed values to generate some possible hexagonal grid arranges and visualize them with the `plot` function in order to select the most appropriated:
+```{r Visualize hexgrid transformation options}
+# Set some parameters to plot the 10 tests in a grid of 2 rows x 5 columns
+par(mfrow = c(2, 5), mar = c(0, 0, 2, 0))
+
+# Iterate the seed to build possible hexgrids:
+for (i in 1:10) {
+  new_cells <- calculate_grid(shape = states_without_islands, grid_type = "hexagonal", seed = i)
+  plot(new_cells, main = paste("Seed", i, sep = " "))
+}
+```
+
+There are some warnings, just ignore them and proceed because they are related to an older version of PROJ libraries used by the package.
+
+Apparently, the best fitting hexgrid for the Mexico states is the one built with **Seed 7**. Calculate again the hexgrid using the `seed = 7` and use the `assign_polygons` function to combine the `states_offenses` values into it and keep just the `clave_ent` (state ID), `nom_abreviado` (abbreviated state name)  and the `hom_10khab` (murders rate per 10K inhabitants) variables:
+```{r Create a hexgrid states layer}
+# Create the hexgrid with the best seed:
+state_cells_hex <- calculate_grid(shape = states_without_islands, grid_type = "hexagonal", seed = 7)
+
+# Assign original layer variables to it:
+states_hex <- 
+  assign_polygons(states_without_islands, state_cells_hex) %>% 
+  select(clave_ent, nom_abreviado, hom_10khab) %>% 
+  glimpse()
+```
+
+Preview resulting hexbin states layer:
+```{r Preview hexbin layer}
+qtm(states_hex) + 
+  tm_text("nom_abreviado") # Add a text layer to label with 'nom_abreviado'
+```
+
+The hexgrid seems to be acceptable to represent the states, now build the choropleth map like the first one, but changing the original shape to use the hexgrid states layer to identify the ones with the higher murder rates in the defined period of time:  
+```{r Create choropleth hexgrid map}
+tm_shape(states_hex) +
+  tm_polygons("hom_10khab",
+              title = "Murders per 10K inhabitants") +
+  tm_text("nom_abreviado") +
+  tm_layout(main.title = "Most violent states in Mexico, Dec. 2018 to Jun. 2021") +
+  tm_credits("Data from INEGI and SESNSP.",
+             position = c("left", "bottom"))
+```
+
+This type of map is more readable and makes it more easy to compare the murders rate volume just by color and not by polygon size, making it a simplified version of the original choropleth map.
+
+## Bubble map combined with choropleth
+
+Another way to visualize proportions of a variable in a map is using  a **bubbles map**. This type of maps are useful to compare between quantities using a circle size and color to represent high and low values. In this example, we will visualize the states with the highest murder rate using bubbles and additionally we will use choropleths to visualize the states total popultation to find relationships between these variables: 
+```{r Bubble map with choropleth}
+tmap_mode("plot") # Change map mode to interactive
+
+tm_shape(states_offenses) +
+  tm_polygons("poblacion",
+              palette = "Blues",
+              alpha = 0.5,
+              title = "Population") +
+  tm_bubbles("hom_10khab", 
+             col = "hom_10khab",
+             title.size  = "Murder rate per 10K inhab.",
+             title.col = "Murders per 10K inhabitants") +
+  tm_layout(main.title = "Most violent states in Mexico, Dec. 2018 to Jun. 2021") +
+  tm_credits("Data from INEGI and SESNSP.",
+             position = c("left", "bottom"))
+```
+
+The map below is an example of how two different visualizations can be combined in the same map to relate different types of data.
+
+## Column plot
+
+To complement the choropleth maps, let's create a column plot with the states with the highest rates of murder per 10,000 inhabitants during the period, which are represented in the map by the orange and red colors (murders rate greater than 30). To achieve this, filter the states with `hom_10khab` >= 30 and sort them in descending order:
+```{r Column plot with murder rates}
+states_offenses %>% 
+  as_tibble() %>% # Convert from sf to tibble object, this will remove geometries
+  select(entidad, hom_10khab) %>% # Pick the variables to be showed
+  filter(hom_10khab >= 30) %>%  # Keep the states with a murder rate greater than 30
+  ggplot(aes(x = fct_reorder(entidad, desc(hom_10khab)), y = hom_10khab, fill = entidad)) + # Create empty plot with sorted entidad and rates
+  geom_col(show.legend = F) + # Add columns, don't show legend
+  scale_fill_brewer(palette = "Blues") +
+  geom_text(aes(label = round(hom_10khab, digits = 1)), vjust = -0.5) + # Add labels above columns
+  labs(title = "Mexico's States with highest murder rates",
+       subtitle = "December 2018 to June 2021",
+       x = "State", 
+       y = "Murders rate per 10,000 inhabitants") # Add titles and axis names
+```
+
+## Datatable visualization
+
+CDMX does not appear in the above graph, so it is useful to know its ranking in homicide rate per 10,000 inhabitants. To achieve this, it is possible to build an interactive table using the `DT` package which allows us to format rows and columns to emphasize the most important insights and also we can rearrange the data using any of the available variables:
+```{r Table visualization}
+states_offenses %>% 
+  as_tibble() %>% # Convert from sf to tibble object, this will remove geometries 
+  mutate(participacion = homicidio/sum(homicidio),
+         ranking = dense_rank(desc(hom_10khab))) %>% 
+  arrange(ranking) %>% 
+  select(ranking, entidad, homicidio, hom_10khab, participacion) %>% 
+  datatable(colnames = c("Ranking", "State", "Murders total", "Murders rate per 10K inhabitants", "Percentage"),
+            rownames = FALSE) %>% 
+  formatRound(columns = "homicidio",
+              digits = 0) %>% 
+  formatRound(columns = "hom_10khab",
+              digits = 2) %>% 
+  formatPercentage(columns = "participacion",
+                   digits = 1) %>% 
+  formatStyle(columns = "participacion",
+              background = styleColorBar(data = 0:1, color = "steelblue")) %>% 
+  formatStyle(columns = "ranking",
+              target = "row",
+              fontWeight = styleEqual(levels = 1:5, values = rep("bold", 5))) %>% 
+  formatStyle(columns = "entidad",
+              target = "row",
+              fontWeight = styleEqual(levels = "Ciudad de México", values = "bold"),
+              backgroundColor = styleEqual(levels = "Ciudad de México", values = "lightblue"))
+```
+
+Using the interactive table below, it is possible to sort data using any variable and search for an specific state, in this case we can observe that the top 5 states with the highest homicide rates per 10,000 inhabitants are Colima, Baja California, Quintana Roo, Guanajuato and Chihuaha, while CDMX is ranked #21, but if the data is sorted by murders total it is possible to find out a different view of the problem where the states with the highest value of total murders are México, Baja California and Guanajuato, with the CDMX being part of this top 10.
+
+## Simple point clustering
+
+Now that information on murders at the national level has been found, it will be necessary to go into detail with the data for the CDMX. In order to find patterns that are useful to learn more about the murder problem in the city, maps can be build with greater detail thanks to the fact that the records at city level are geo-referenced.
+
+Load the previously processed layer `murders_cdmx.gpkg`, stored in `Data` folder:
+```{r Read murders point data}
+murders_cdmx <-
+  st_read("Data/murders_cdmx.gpkg") %>% 
+  glimpse()
+```
+
+Quickly visualize the geographic points in a map:
+```{r Preview murder points}
+tmap_mode("view") # Set map mode as interactive
+qtm(murders_cdmx) # Quick thematic map with murder points
+```
+
+*Leaflet* is a well-known javascript library for building interactive web maps that can be used also in R, in fact the interactive maps built with the `tmap` package rely on it to display interactive maps in `view` mode. As seen in section 1, there is another alternative to the `tmap` package to build interactive maps using *Leaflet* directly using R through the `leaflet` package. 
+
+Show the murder points in a map, now using `leaflet` package:
+```{r Points map with Leaflet}
+library(leaflet)  # Load leaflet package
+
+leaflet(murders_cdmx) %>% # Create an empty map with the murders layer
+  addTiles() %>% # Add a basemap, by default uses OpenStreetMap
+  addCircles() # Add a points layer as circles
+
+# Alternatively, you can use marker icons instead circles, using addMarkers function, not recommended for large datasets (uncomment following lines to try out):
+# leaflet(murders_cdmx) %>% # Create an empty map with the murders layer
+#   addTiles() %>% # Add a basemap, by default uses OpenStreetMap
+#   addMarkers() # Add a points layer as markers
+```
+
+*Leaflet* can be used to clusterize points in a simple way, repeat the example below now using the parameter `clusterOptions = markerClusterOptions()` on the `addMarkers` instead `addCircle` function:
+```{r Simple point cluster with Leaflet}
+leaflet(murders_cdmx) %>% # Create an empty map with the murders layer
+  addTiles() %>% # Add a basemap, by default uses OpenStreetMap
+  addMarkers(label = ~fecha_hechos, # Shows date when hover a point 
+             popup = ~fecha_hechos, # Shows date when click on a point
+             clusterOptions = markerClusterOptions()) # Add a points layer as circles
+```
+
+This interactive cluster maps are useful to find specific areas in the city where the murders happen more frequently, the point clusters are represented as circles with the number of total represented points, colorized from lower to higher and located in the common centroid between them. It is possible to interactively browse and expand the clusters when zooming in and out and thus identify streets and areas with a high incidence of murders.
+
+## Hotspots map
+
+Hotspots maps uses a color scale to contrast zones with low (cold) and high (hot) values. In this example we will use the previously Kernel Density Estimation (KDE) raster file created in section 4 to build a map intended for visualization of murders incidence density areas in the city.
+
+Read the raster file using the `raster` function:
+```{r}
+murders_raster <- raster("Data/murders_kde.tif")
+
+# Preview raster data contents:
+murders_raster
+```
+
+Visualize the raster layer in a map using `tmap` package:
+```{r}
+tm_shape(murders_raster) +
+  tm_basemap() +
+  tm_raster(palette = "YlOrRd",
+            alpha = 0.5)
+```
+
+The resulting map shows several concentration zones in red. The values in the color scale represents the murders density per grid area unit.
+
+## Decision making
+
+
+## References
+
+* Tennekes, M., Nowosad, J. (2018). *tmap: Thematic Maps in R*. Journal of Statistical Software. Retrieved September 8, 2021, from [https://www.researchgate.net/publication/324652152_tmap_Thematic_Maps_in_R/fulltext/5ad9e7eb0f7e9b28593cf867/tmap-Thematic-Maps-in-R.pdf](https://www.researchgate.net/publication/324652152_tmap_Thematic_Maps_in_R/fulltext/5ad9e7eb0f7e9b28593cf867/tmap-Thematic-Maps-in-R.pdf)
+* Wickham, H. (2021). *ggplot2: Elegant Graphics for Data Analysis.* Retrieved October 8, 2021, from [https://ggplot2-book.org/index.html](https://ggplot2-book.org/index.html)
+* Tennekes, M., Nowosad, J. (2021). *Elegant and informative maps with tmap.* Retrieved September 8, 2021, from [https://r-tmap.github.io/tmap-book/](https://r-tmap.github.io/tmap-book/)
+* *DT: An R interface to the DataTables library.* Retrieved October 8, 2021 from [https://rstudio.github.io/DT/](https://rstudio.github.io/DT/)
+* Algorithmic tesselation with geogrid Retrieved October 15 from [https://github.com/jbaileyh/geogrid](https://github.com/jbaileyh/geogrid)
