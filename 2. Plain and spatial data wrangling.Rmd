@@ -326,7 +326,7 @@ We need the layer of Mexican states provided also by the INEGI which can be free
 ```{r Read Mexico states layer}
 mexico_states <- 
   st_read("Data/mexico_states.gpkg") %>% 
-  select(id_estado) %>% 
+  select(id_estado, nom_abreviado) %>%
   glimpse()
 ```
 
