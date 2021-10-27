@@ -583,7 +583,7 @@ install.packages("https://cran.r-project.org/src/contrib/Archive/aspace/aspace_3
                  type = "source")
 ```
 
-It is possible to install any package from source code using the procedure below explained.
+It is possible to install any package from source code using the procedure below presented.
 
 ## References
 
