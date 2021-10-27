@@ -29,10 +29,6 @@ Search a term on the help files using `help.search`:
 help.search("control flow")
 ```
 
-### Data types
-
-(Data types)
-
 ### Basic operators
 
 Example of addition:
@@ -42,6 +38,9 @@ Example of addition:
 34 * 0.14 # Multiply
 89.4 / 5 # Divide
 ```
+
+
+### Variable assignation
 
 Assign a value to a variable with `<-` or `=`:
 ```{r Numeric variable assign}
@@ -54,13 +53,99 @@ my_string <- "Hello world"
 my_string # Visualize variable value
 ```
 
-### Vectors
+### Data types
+
+Similar to other programming languages, R handles different basic data types for storing data. It is important to understand these data types in order to use R functions correctly.
+
+#### Numeric
+
+Numbers that have a decimal value or are a fraction:
+```{r Numeric data type example}
+a <- 1.5
+
+# Previsualize a value:
+a
+```
+
+To check the data type, use the `class` function:
+```{r Check data type}
+class(a)
+```
+
+#### Integer
+
+Numbers that do not contain decimal values have a data type as an integer. By default if you write a number without decimal value R interprets it as numeric, so it is necessary to explicitly declare it as integer using the `as.integer` function:
+```{r Integer data type}
+a <- as.integer(1.5) # When casting the number to integer, it will truncate decimal value
+a
+```
+
+Now, check the new data type of `a` variable:
+```{r Check integer data type}
+class(a)
+```
+
+#### Character
+
+It can be a letter or a combination of letters enclosed by quotes is considered as a character data type by R. It can be alphabets or numbers.
+```{r Character data type}
+a <- "I like this workshop! (we hope so)" # When casting the number to integer, it will truncate decimal value
+a
+```
+
+Now, check the new data type of `a` variable:
+```{r Check character data type}
+class(a)
+```
+
+The character data types are also known as *strings*.
+
+#### Logical
+
+A variable that can only have a value of `TRUE` and `FALSE` like a boolean is called a *logical variable*:
+```{r Logical data type}
+a <- TRUE
+a
+```
+
+Now, check the new data type of `a` variable:
+```{r Check logical data type}
+class(a)
+```
+
+#### Vectors
 
 Vectors are basic data structures used in R to compute multiple values at once and stores elements with the same data type . Create a vector using `c()`:
 ```{r Create vector}
 my_vector <- c(5, 2, 4, 9, 8, 9, 1, 2, 2)
 my_vector
 ```
+
+Now, check the new data type of `my_vector` variable:
+```{r Check vector elements data type}
+class(my_vector) # Data type of the elements of the vector
+```
+
+#### Factor
+
+They are used to refer to a qualitative relationship like colors, good & bad, course or movie ratings, etc. They are useful in statistical modeling. To define a factor, use a vector with the elements to be used and the function `factor`:
+
+```{r Create a factor}
+a <- factor(c("low", "low", "high", "medium", "high", "medium", "low"))
+a
+```
+
+To check the levels of a factor, use the `levels` function:
+```{r Check levels of a factor}
+levels(a)
+```
+
+Now, check the new data type of `a` variable:
+```{r Check factor data type}
+class(a)
+```
+
+### Operations with vectors
 
 Create a simple integer sequence:
 ```{r Create sequence}
@@ -165,7 +250,7 @@ my_vector > a # Compare each element in my_vector to a
 b %in% my_vector # Is b in any element of my_vector?
 ```
 
-### Data Frames
+### Data frames
 
 In R, a dataframe is a tightly coupled collection of variables built as a table where every column has a particular data type. Data frames are the fundamental data structure used by most of R modeling software. Create a data frame using the `data.frame` function:
 ```{r Create a data frame}
@@ -454,12 +539,6 @@ To install `tmap` package:
 install.packages("tmap")
 ```
 
-Also, install additional tools for `tmap` with `tmaptools`:
-
-```{r Install tmaptools package}
-install.packages("tmaptools")
-```
-
 For further reference, visit the [tmap website](https://mtennekes.github.io/tmap/) and the [official package documentation](https://cran.r-project.org/web/packages/tmap/index.html).
 
 ### Leaflet
@@ -472,6 +551,39 @@ install.packages("leaflet")
 ```
 
 For further reference, visit the [leaflet website](https://rstudio.github.io/leaflet/) and the [official package documentation](https://cran.r-project.org/web/packages/leaflet/).
+
+### DT (DataTables)
+
+The `DT` package is used to display R dataframes as interactive tables using a JavaScript library named *DataTable*.
+
+To install `DT` package:
+```{r Install DT package}
+install.packages("DT")
+```
+
+For further reference, visit the [DT website](https://rstudio.github.io/DT/) and the [official package documentation](https://cran.r-project.org/web/packages/DT/index.html).
+
+### Complementary packages
+
+It is also possible to install multiple packages at once passing the names as a vector:
+```{r Install complementary packages}
+install.packages(c("rmapshaper", "geogrid"))
+```
+
+Sometimes because of specific reasons it is necessary to install discontinued packages (marked as *archived* in the CRAN). these packages cannot be installed in the regular way as it has been done previously, so it is required to refer to the package's source code and compile it. Later in this workshop we will use a package named `aspace`, now archived and not updated on the CRAN since a lot of years.
+
+In order to compile packages in Windows, it is necessary to install **RTools** from [https://cran.rstudio.com/bin/windows/Rtools/](https://cran.rstudio.com/bin/windows/Rtools/). Once installed, compile and install the package using the `install.packages` function with some extra parameters:
+```{r Install aspace package from source}
+# First install some dependency packages:
+install.packages(c("splancs", "shapefiles"))
+
+# Install aspace from source code:
+install.packages("https://cran.r-project.org/src/contrib/Archive/aspace/aspace_3.2.tar.gz",
+                 repos = NULL,
+                 type = "source")
+```
+
+It is possible to install any package from source code using the procedure below.
 
 ## References
 
