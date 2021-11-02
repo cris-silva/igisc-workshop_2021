@@ -1,8 +1,10 @@
 ---
 title: "6. Data visualization and decision making"
 author: "Ana J. Alegre (jalegre@centrogeo.edu.mx), Cristian Silva (csilva@centrogeo.edu.mx)"
-output: html_notebook
 date: "11/4/2021"
+output:
+  html_document:
+    df_print: paged
 ---
 
 ## Introduction
@@ -129,14 +131,14 @@ for (i in 1:10) {
 There are some warnings, just ignore them and proceed because they are related to an older version of PROJ libraries used by the package.
 
 Apparently, the best fitting hexgrid for the Mexico states is the one built with **Seed 7**. Calculate again the hexgrid using the `seed = 7` and use the `assign_polygons` function to combine the `states_offenses` values into it and keep just the `clave_ent` (state ID), `nom_abreviado` (abbreviated state name)  and the `hom_10khab` (murders rate per 10K inhabitants) variables:
-```{r Create a hexgrid states layer}
+```{r Create a hexgrid states layer, warning=FALSE}
 # Create the hexgrid with the best seed:
 state_cells_hex <- calculate_grid(shape = states_without_islands, grid_type = "hexagonal", seed = 7)
 
 # Assign original layer variables to it:
 states_hex <- 
   assign_polygons(states_without_islands, state_cells_hex) %>% 
-  select(clave_ent, nom_abreviado, hom_10khab) %>% 
+  dplyr::select(clave_ent, nom_abreviado, hom_10khab) %>% # Warning: both raster and tidyverse have a 'select' function, we need the latter
   glimpse()
 ```
 
@@ -187,7 +189,7 @@ To complement the choropleth maps, let's create a column plot with the states wi
 ```{r Column plot with murder rates}
 states_offenses %>% 
   as_tibble() %>% # Convert from sf to tibble object, this will remove geometries
-  select(entidad, hom_10khab) %>% # Pick the variables to be showed
+  dplyr::select(entidad, hom_10khab) %>% # Pick the variables to be showed
   filter(hom_10khab >= 30) %>%  # Keep the states with a murder rate greater than 30
   ggplot(aes(x = fct_reorder(entidad, desc(hom_10khab)), y = hom_10khab, fill = entidad)) + # Create empty plot with sorted entidad and rates
   geom_col(show.legend = F) + # Add columns, don't show legend
@@ -208,7 +210,7 @@ states_offenses %>%
   mutate(participacion = homicidio/sum(homicidio),
          ranking = dense_rank(desc(hom_10khab))) %>% 
   arrange(ranking) %>% 
-  select(ranking, entidad, homicidio, hom_10khab, participacion) %>% 
+  dplyr::select(ranking, entidad, homicidio, hom_10khab, participacion) %>% 
   datatable(colnames = c("Ranking", "State", "Murders total", "Murders rate per 10K inhabitants", "Percentage"),
             rownames = FALSE) %>% 
   formatRound(columns = "homicidio",
@@ -298,11 +300,21 @@ The resulting map shows several concentration zones in red. The values in the co
 
 ## Decision making
 
+1. Eight states with the highest number of murders: Guerrero, Baja California, Michoacán, Jalisco, Guanajuato, Estado de México, Veracruz and Chihuahua.
+2. According to the crimes that could be associated with organized crime (murder, extortion and kidnapping) there are states that have some similarities, especially in the northern border, the Pacific and some states adjacent to the center, such as San Luis Potosí and Puebla.
+3. This type of study can be expanded, incorporating more variables, and coordination between states that share borders can be suggested to implement joint decisions.
+4. Mexico City presents a pattern of accumulation of murders in the center of the city. The distance from the first nearest neighbor in murders is 265 meters.
+5. The eastern and northern zones of the city also show patterns of accumulation.
+6. In subsequent studies, correlation studies and schedules of events can be carried out in order to carry out prevention programs.
 
 ## References
 
 * Tennekes, M., Nowosad, J. (2018). *tmap: Thematic Maps in R*. Journal of Statistical Software. Retrieved September 8, 2021, from [https://www.researchgate.net/publication/324652152_tmap_Thematic_Maps_in_R/fulltext/5ad9e7eb0f7e9b28593cf867/tmap-Thematic-Maps-in-R.pdf](https://www.researchgate.net/publication/324652152_tmap_Thematic_Maps_in_R/fulltext/5ad9e7eb0f7e9b28593cf867/tmap-Thematic-Maps-in-R.pdf)
+
 * Wickham, H. (2021). *ggplot2: Elegant Graphics for Data Analysis.* Retrieved October 8, 2021, from [https://ggplot2-book.org/index.html](https://ggplot2-book.org/index.html)
+
 * Tennekes, M., Nowosad, J. (2021). *Elegant and informative maps with tmap.* Retrieved September 8, 2021, from [https://r-tmap.github.io/tmap-book/](https://r-tmap.github.io/tmap-book/)
+
 * *DT: An R interface to the DataTables library.* Retrieved October 8, 2021 from [https://rstudio.github.io/DT/](https://rstudio.github.io/DT/)
-* Algorithmic tesselation with geogrid Retrieved October 15 from [https://github.com/jbaileyh/geogrid](https://github.com/jbaileyh/geogrid)
+
+* *Algorithmic tesselation with geogrid.* Retrieved October 15 from [https://github.com/jbaileyh/geogrid](https://github.com/jbaileyh/geogrid)
