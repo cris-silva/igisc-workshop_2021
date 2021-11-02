@@ -575,7 +575,7 @@ Sometimes because of specific reasons it is necessary to install discontinued pa
 In order to compile packages in Windows, it is necessary to install **RTools** from [https://cran.rstudio.com/bin/windows/Rtools/](https://cran.rstudio.com/bin/windows/Rtools/). Once installed, compile and install the package using the `install.packages` function with some extra parameters:
 ```{r Install aspace package from source}
 # First install some dependency packages:
-install.packages(c("splancs", "shapefiles"))
+install.packages(c("splancs", "shapefiles", "factoextra", "clusterCrit", "NbClust", "spdep", "corrplot", "igraph"))
 
 # Install aspace from source code:
 install.packages("https://cran.r-project.org/src/contrib/Archive/aspace/aspace_3.2.tar.gz",
