@@ -1,0 +1,324 @@
+---
+title: "3. Exploratory Data Analysis (EDA)"
+author: "Ana J. Alegre (jalegre@centrogeo.edu.mx), Cristian Silva (csilva@centrogeo.edu.mx)"
+output: html_notebook
+date: "11/3/2021"
+---
+
+## Introduction
+
+Visual inspection of data is a central tenet of Exploratory Data Analysis (EDA). EDA emphasizes the analysis of data through visual and graphical means in order to inform hypotheses and validate assumptions. Humans have mastered the ability of detecting patterns by simply looking and inspecting an object. We do ourselves a great service as data scientists to use our vision to quickly intuit patterns in graphs (Onaya, 2020).
+
+## Objective
+
+In this section we will review some instructions to take a first look at our data, we will calculate some descriptive statistics and we will create distribution visualizations (histograms and boxplot). In addition, we will move from these basic statistics such as measures of central tendency and dispersion to then derive and visualize these same concepts in spatial analysis.
+
+## Data Preparation
+
+First of all, clear all objects from the environment:
+```{r Clean environment}
+rm(list = ls())
+```
+
+## Univariate EDA
+
+We will calculate some descriptive statistics and create visualizations of the distribution of a single variable (histograms, box and whisker plots). 
+Load the packages to be used:
+```{r Load packages}
+library(tidyverse)
+library(lubridate)
+library(sf)
+library(tmap)
+library(raster)
+library(aspace)
+```
+
+We will work with the data you have already cleaned and created in the previous practice. The "geopackage" file containing crime statistics (murder, extortion and kidnapping) by state in Mexico (states_offenses.gpkg).
+
+Load the data you obtained in exercise 2. Plain and spatial data wrangling:
+```{r Read offenses data}
+state_data <-
+st_read("Data/states_offenses.gpkg") %>% 
+  glimpse()
+```
+
+To obtain an overview of the basic measures of descriptive statistics we can use "summary":
+```{r Murders data information}
+summary(state_data$homicidio)
+```
+
+Range is a measure of dispersion that shows the difference between the highest (maximum) and lowest (minimum) values in a set of observations:
+```{r Murders data range}
+range(state_data$homicidio)
+```
+
+Standard deviation is a summary statistic that measures the extent to which the data values are scattered around the mean (or center) of the distribution:
+```{r Murders data Standard Deviation}
+sd(state_data$homicidio)
+```
+
+Variance is an important measure of dispersion or unevenness that indicates how a set of observations varies from the mean. If there is a wide variation from the mean, then the variance will be large; likewise, if it is small, then variation from the mean is narrow:
+```{r Murders Offenses Variance}
+var(state_data$homicidio)
+```
+
+### Histogram
+
+One of the simplest means of generating a graphical summary is by plotting the frequency distribution of a single variable (univariate) that is measured on an interval scale. It reveals the center of the data (mean, median, and mode), the spread of the data (dispersion or unevenness), the shape and distribution (skewness) of the data, and evidence of potential outliers in the data.
+
+```{r Murders Histogram}
+h_murders <- ggplot(state_data, aes(x= homicidio)) +
+  geom_histogram(bins = 8, alpha = 0.75) +
+  labs(title = "México: Murders histogram by state",
+       subtitle = "December 2018 to june 2021",
+       x = "Murders",
+       y = "States")
+h_murders
+```
+
+### Boxplot
+
+The boxplot shows the shape of the distribution, the center of the data, and its dispersion. The diagram specifically captures five statistical measures: the minimum and maximum values (range), lower and upper interquartiles, and the median.
+```{r Murders Boxplot}
+bp_murders <- ggplot(state_data, aes(y= homicidio)) +
+  geom_boxplot() +
+  labs(title = "México: Murders boxplot",
+       subtitle = "December 2018 to june 2021",
+       y= "Murders")
+bp_murders
+```
+
+How does this look on a map?
+```{r Murders quartile by state}
+tm_shape(state_data) +
+  tm_polygons("homicidio", style = "quantile", n=4, title = "Murders by quartile")
+```
+
+There were eight states with more than 7.5 hundred murders: Baja California, Chihuahua, Jalisco, Michoacán, Guanajuato, Guerrero, Estado de México and Veracruz.
+
+## Multivariate EDA
+
+What if we want to analyze more than one variable?
+
+With the following instructions we transform our data into a table in order to be able to analyse the data of more than one variable:
+```{r Obtain tibble object}
+state_data_long <-
+  state_data %>% 
+  as_tibble() %>%
+  dplyr::select(entidad, homicidio, extorsion, secuestro, poblacion) %>% 
+  pivot_longer(c("homicidio", "extorsion", "secuestro"), names_to = "delito", values_to = "total") %>% 
+  glimpse()
+```
+
+We can now look at box and whisker plots for different variables and compare them:
+```{r Offenses Boxplot}
+boxplot_by_crime <-
+  ggplot(state_data_long) +
+  geom_boxplot(aes(x= delito, y = total)) +
+  labs(title = "México: Boxplot by crime",
+       subtitle = "December 2018 to july 2021",
+       y= "Murders")
+
+boxplot_by_crime
+```
+
+We can see that the reports for murder are much higher in volume than the others in Mexico and we can also see the outliers.
+
+### Scatterplot
+
+This is a visual representation that shows the direction and strength of a relationship between the two variables (the dependent Y against independent X). Specifically, the scatterplot explores whether the values of Y vary systematically with the corresponding values of X.
+```{r Murder vs. population scatter plot}
+ggplot(state_data, aes(x= homicidio, y = poblacion)) +
+  geom_point() +
+  labs(title = "México: Relationship between murders and population",
+       subtitle = "December 2018 to july 2021",
+       x = "Murders",
+       y = "Population")
+```
+
+To visually explore the relationships among several pairs of variables, the best approach to use is a scatterplot matrix. In a single display, the scatterplot matrix can depict the relationships among all possible pairs of variables selected for analysis.
+```{r Offenses vs. population scatter plot}
+ggplot(state_data_long, aes(x= total, y = poblacion)) +
+  geom_point() +
+  labs(title = "México: Relationship between crimes and population",
+       subtitle = "December 2018 to july 2021",
+       x = "Crimes",
+       y = "Population") +
+  facet_wrap(~delito, ncol = 2, scales = "free")
+```
+
+## Spatial Statistics
+
+Spatial statistics deals with observation recorded in pairs. Spatial descriptive statistics are used to measure the basic characteristics of spatial data.
+
+There are two common types of measures that can be undertaken: (1) one that measures centrality (spatial measures of central tendency) and (2) one that measures dispersion (spatial measures of dispersion) of events over space. These measures provide useful summaries of a spatial distribution.
+
+For this exercise we are going to use spatial point data of the murder reports in Mexico City, the "geopackage" file that you saved in the previous practice (murders_cdmx.gpkg).
+```{r Read Mexico City murders data}
+cdmx_murders <-
+  st_read("Data/murders_cdmx.gpkg") %>% 
+  glimpse()
+```
+
+We also load the outline of Mexico City:
+```{r Read Mexico City border}
+cdmx_border <-
+st_read("Data/cdmx_border.gpkg") %>% 
+  st_transform(6369)
+```
+
+We visualize our data:
+```{r Mexico City murders map, warning=FALSE}
+tm_shape(cdmx_border) +
+  tm_polygons() +
+  tm_shape(cdmx_murders) +
+  tm_dots()
+```
+
+With the following instructions we separate a little the points that are in the same place, so we will not have points in exactly the same place, but we do not lose information about places that may be recurrent. We then remove all records that do not have geographic coordinates. In addition we change the projection to be able to perform distance analysis, the projection we will use is ITRF2008/UTM Zone 14N-EPSG:6369.
+```{r Clean and define CRS}
+cdmx_murders_jitter <-
+cdmx_murders %>%
+  st_transform(6369) %>% 
+  filter(!st_is_empty(geom)) %>% 
+  st_jitter() %>% 
+  glimpse()
+```
+
+This step is only to review how many records were deleted because they did not have geographic coordinates.
+```{r Check the number of records}
+nrow(cdmx_murders)
+nrow(cdmx_murders_jitter)
+```
+
+To obtain the measures of central tendency and dispersion we extract an object in "tibble" format only with the data of the geographic coordinates in the projection: ITRF2008/UTM Zone 14N-EPSG:6369.
+```{r Obtain a table with only the coordinates already projected}
+xy <- 
+  st_coordinates(cdmx_murders_jitter) %>% 
+  as_tibble() %>% 
+  glimpse()
+```
+
+### Spatial Mean/Mean Center
+
+The spatial mean provides the average value of observed points for each of the X- and Y-coordinates. It shows the central point of spatial distributions of events. 
+```{r Spatial mean}
+meanc <-
+  st_point(c(mean(xy$X), mean(xy$Y))) %>% 
+  st_sfc(crs = 6369) %>%
+  st_sf() %>% 
+  glimpse()
+```
+
+### Spatial Median/Median Center
+
+The spatial median/median center provides an efficient way to estimate the location parameter of a statistical population.
+```{r Spatial median}
+medianc <-
+  st_point(c(median(xy$X), median(xy$Y))) %>% 
+  st_sfc(crs = 6369) %>%
+  st_sf() %>% 
+  glimpse()
+```
+
+What do they look like on the map?
+```{r Spatial media and spatial median map}
+tm_shape(cdmx_border) +
+  tm_polygons() +
+  tm_shape(cdmx_murders_jitter) +
+  tm_dots() +
+  tm_shape(meanc) +
+  tm_symbols(shape = 15, col = "red", size = 1, alpha = 0.75) +
+  tm_shape(medianc) +
+  tm_symbols(shape = 17, col = "blue", size = 1, alpha = 0.75)
+```
+ 
+### Spatial Measures of Dispersion
+
+Spatial measures of dispersion measure the spatial variations or spread of observation points/events. Common methods that can be used to summarize the distribution of observation points include standard distance, weighted standard distance, and the standard deviational ellipse. These methods are extremely useful in situations where we seek to understand the centers of spatial distributions and the extent of dispersion of spatial events.
+
+#### Standard Deviational Ellipse
+
+This is a valuable measure of the dispersion of spatial events around the spatial mean. It gives the dispersion of observation points along the major and minor axes. It is a useful measure for summarizing data with a distributional directional bias. The measure can also be used in identifying distributional trends of geographic phenomena. This measure is able to account for both distance and orientation/directionality.
+```{r Calculate Standard Deviation Ellipse}
+# Calculate SDE:
+murders_cdmx_sde <-
+  calc_sde(filename = "Data/murders_cdmx_sde.txt", points = xy)
+
+# Write a shapefile with the calculated ellipse:
+convert.to.shapefile(sdeloc, sdeatt, "id", 5) %>% 
+  write.shapefile("Data/murders_cdmx_sde", arcgis = TRUE)
+```
+
+Load the ellipse shapefile and visualize:
+```{r Visualize SDE}
+murders_cdmx_sde <-
+  st_read("Data/murders_cdmx_sde.shp") %>% 
+  st_set_crs(6369) %>% 
+  st_transform(4326) %>% 
+  glimpse()
+
+tm_shape(cdmx_border) +
+  tm_polygons() +
+  tm_shape(cdmx_murders_jitter) + 
+  tm_dots() +
+  tm_shape(murders_cdmx_sde) +
+  tm_polygons(alpha = 0.5, col = "red", border.alpha = 0)
+```
+
+## Density
+
+The basic way to calculate point density (intensity) is:
+```{r Global density}
+cdmx_area <-
+  st_area(cdmx_border)
+density <-
+  nrow(cdmx_murders_jitter) / cdmx_area
+density
+```
+
+Quadrant counting:
+```{r Local density, warning=FALSE}
+cdmx_raster <-
+  raster(cdmx_border)
+res (cdmx_raster) <- 1000
+cdmx_raster
+```
+
+Quadrant count display:
+```{r Local density map, warning=FALSE}
+cdmx_raster <-
+  rasterize(cdmx_border, cdmx_raster)
+quads <-
+  as(cdmx_raster, 'SpatialPolygons')
+tm_shape(quads) +
+  tm_polygons(col="yellow") +
+  tm_shape(cdmx_murders_jitter) +
+  tm_dots(col = "red")
+```
+
+Transfer values associated with 'object' type spatial data (points, lines, polygons) to raster cells:
+```{r Raster layer}
+cdmx_den <-
+  rasterize(coordinates(xy), cdmx_raster, fun = 'count', backgound = 0)
+tm_shape(cdmx_den) +
+  tm_raster()
+#plot(cdmx_border, add = TRUE, alpha= 0.1)
+```
+
+We can add the border of Mexico City to our map:
+```{r Raster layer wwith CDMX border}
+tm_shape(cdmx_den) +
+  tm_raster() +
+  tm_shape(cdmx_border) +
+  tm_polygons(alpha = 0)
+```
+
+Tomorrow we will see more about point pattern analysis and the statistical tests that allow us to identify clusters.
+
+## References
+
+* Chen, J. C., Rubin, E. A., & Cornwall, G. J. *Data Science for Public Policy*.
+* Jean-François (2018). *Análisis Espacial con R. Usar R como un Sistema de Información Geográfica*. National and University Library ”St.Kliment Ohridski¨ın Skopje. Retrieved on October 18, 2021 from [https://www.studocu.com/co/document/universidad-autonoma-latinoamericana/economia/jean-francois-mas-sig/7590631](https://www.studocu.com/co/document/universidad-autonoma-latinoamericana/economia/jean-francois-mas-sig/7590631)
+* Oyana, T. J. (2020). *Spatial Analysis with R: Statistics, Visualization, and Computational Methods*. CRC press.
+* Gimond, M. (2021). *Intro to GIS and Spatial Analysis*. Retrieved October 18, 2021 from [https://mgimond.github.io/Spatial/](https://mgimond.github.io/Spatial/)
