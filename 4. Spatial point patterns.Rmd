@@ -1,0 +1,221 @@
+---
+title: "4. Spatial point patterns"
+author: "Ana J. Alegre (jalegre@centrogeo.edu.mx), Cristian Silva (csilva@centrogeo.edu.mx)"
+output: html_notebook
+date: "11/4/2021"
+---
+
+## Introduction
+
+In the previous exercise we started to analyze a bit of spatial point data. In this one we will look a bit more at the analysis of spatial point data, as well as some statistical tests to identify clustering patterns.
+
+## Objective
+
+Introduce the analysis of point patterns, look at the different types of spatial distribution, as well as review some of the main statistical tests to know our data and identify accumulation patterns.
+
+## Data preparation
+
+First of all, clear all objects from the environment:
+```{r Clean environment}
+rm(list = ls())
+```
+
+Load the packages to be used:
+```{r Load packages}
+library(tidyverse)
+library(sf)
+library(raster)
+library(spatstat)
+library(tmap)
+```
+
+Read the murders data points for CDMX:
+```{r Read Mexico City murders data}
+murders_cdmx <-
+  st_read("Data/murders_cdmx.gpkg") %>% 
+  st_transform(6369) %>% # Transform CRS from WGS84 geographic coordinates to projected Mexico ITRF2008 UTM Z14N
+  filter(!st_is_empty(geom)) %>% # Omit all features with empty geometry
+  glimpse()
+```
+
+We also loaded the outline of Mexico City:
+```{r Read Mexico City border}
+cdmx_border <-
+  st_read("Data/cdmx_border.gpkg") %>% 
+  st_transform(6369) # Transform CRS from WGS84 geographic coordinates to projected Mexico ITRF2008 UTM Z14N
+qtm(cdmx_border) # Quickly visualize CDMX polygon
+```
+
+Create an *observation window* to frame the resulting raster, converting the `cdmx_border` *sf layer* with the function `as.owin`:
+```{r Define observation window}
+cdmx_window <- as.owin(cdmx_border)
+```
+
+Convert the murders *sf layer* to *planar point pattern* (`ppp`) using the function `as.ppp`:
+```{r Create ppp object, warning=FALSE}
+murders_ppp <- as.ppp(murders_cdmx)
+```
+
+By default `as.ppp` uses the points extents as observation window, change it using the `Window` function to use the `cdmx_window` defined below:
+```{r Define observation window to ppp object}
+Window(murders_ppp) <- cdmx_window
+```
+
+## Analyzing spatial point patterns
+
+### Spatial point distribution
+
+#### Chi square testing
+
+Check if the spatial point distribution is random, using Chi square testing:
+```{r Chi Square testing}
+quadrat.test(murders_ppp, nx = 100, ny = 100)
+```
+
+If the observed χ2 is less than the critical value, then we accept the null hypothesis. If not, then we accept the alternative hypothesis. Look up your critical values at p < .05.
+
+As can be seen in the results of this test, the hypothesis of randomness is rejected, i.e., there is a pattern of accumulation of homicides in certain places.
+
+### Average Nearest Neighbor (ANN)
+
+ANN is a global clustering test that does not point out specific clusters, but rather seeks to identify a Nearest Neighbor Ratio describing clusters in the entire data set (n= 1993).
+
+```{r ANN for the first neighbor}
+murders_ndist_1 <- nndist(murders_ppp)
+mean(murders_ndist_1)
+```
+
+The average distance observed between the first nearest neighbor is 265 meters in the period under study (December 2018 to June 2021).
+```{r ANN for the second neighbor}
+murders_ndist_2 <- nndist(murders_ppp, k=2)
+mean(murders_ndist_2)
+```
+
+The average distance observed between the second nearest neighbor is 414 meters in the period under study (December 2018 to June 2021).
+
+### Ripley's K
+
+Unlike the nearest neighbor method, which relies on distances only to the closest events, the K-function approach explores a spatial pattern across a range of spatial scales
+
+With Ripley's K function we can identify clusters, taking into account the spatial dependence of the points within predefined distances and increments. In addition, it allows us to make inferences about the existence of other possible points, based on the distribution of the observed ones.
+
+With this function, Ripley's K, we are interested in seeing the red dotted line and the black line. The first shows how the theoretical distribution of the points should be. The second shows how they are distributed according to the observed points. When the black line is above the red line it means that there is clustering. In addition, it shows the distances in meters where other points may exist (x-axis).
+
+Calculate Ripley's K without correction and 99 simulations, using `envelope` function with `fun = Kest`:
+```{r Ripley´s K}
+murders_k <- envelope(murders_ppp, fun = Kest, nrank = 2, nsim = 99, correction = "none") # Without correction
+# murders_k <- envelope(murders_ppp, fun = Kest, nrank = 2, nsim = 99, correction = "best") # Optionally using correction
+```
+
+Visualize outcomes using default `plot` function:
+```{r Ripley´s K Graphic}
+plot(murders_k, main = "Ripley's K for murders in CDMX")
+```
+
+What we see? Just the black line is above the red one, so there is a clustering pattern in murders reported in Mexico City. 
+
+### L Function
+
+The L function is basically the K function, but it helps to visualize the distances in a better way. This is because the L function corrects for the variance that increases with distance.
+
+There are two options to visualize the L-function. The first one as shown below L(r) versus r (the diagonal).
+
+Calculate *L Function* for the murders, using `Lest` function:
+```{r L Function}
+murders_l <- envelope(murders_ppp, fun=Lest, nrank=2, nsim=200, correction = "none")
+#murders_l <- Lest(murders_ppp)
+```
+
+Visualize outcomes using default `plot` function L(r):
+```{r L Function Graphic 1}
+plot(murders_l, main = "L Function for murders in CDMX")
+```
+This second graph option is more optimal since it allows to better visualize the maximum point of the distances of the points, according to the K function r(the diagonal).
+```{r L Function Graphic 2}
+plot(murders_l, . -r ~ r, ylab=expression(hat("L")), xlab = "d (m)", main="L Function L(d)- d for murders in CDMX")
+```
+Looking at the results with the L function, we can see that the maximum point is between 8 km - 10 km.
+
+### G function: Distance to the nearest event
+
+The *G function* measures the distribution of distances from an arbitrary event to the nearest event.
+
+Calculate *G function* with 99 simulations, using `envelope` function with `fun = Gest`:
+```{r G Function}
+murders_g <- envelope(murders_ppp, fun = Gest, nrank = 2, nsim = 99)
+```
+
+Visualize outcomes using default `plot` function:
+```{r G Function Graphic}
+plot(murders_g, main = "G Function: Distance to the nearest murder event in CDMX")
+```
+
+A pattern of accumulation can be observed in Mexico City murders, since 80 percent of the observations are within a radius of approximately 500 meters, thus rejecting the hypothesis of randomness.
+
+### F Function: Distance from a random point to the nearest event
+
+The *F Function* measures the distribution of all distances from an arbitrary point in the plane to its nearest event. This function is often called the "empty space function" because it is a measure of the average separation remaining between events.
+
+This value is identical to the value expected by the G function, this because the points of the Poisson process are independent of each other.
+
+Calculate *F Function* with 99 simulations, using `envelope` function with `fun = Fest`:
+```{r F Function}
+murders_f <- envelope(murders_ppp, fun = Fest, nrank = 2, nsim = 99)
+```
+
+Visualize outcomes using default `plot` function:
+```{r F Function Graphic}
+plot(murders_f, main = "F Function: Distance from a random point to the nearest murder event in CDMX")
+```
+
+Observing the results there is a pattern of accumulation, confirming the rejection of the hypothesis of randomness. Also with this function we can observe the speed of the accumulation, the first thousand observations accumulate faster and then they are maintained.
+
+## Density
+
+### Global density
+
+The global density is only the number of events over the total study area.
+
+Calculate global density dividing the total murders (using `nrow` function) by the CDMX area (using the `st_area` function):
+```{r Global density}
+murders_global_density <- nrow(murders_cdmx)/st_area(cdmx_border)
+murders_global_density
+```
+
+### Local density
+
+Create a 50x50 grid to calculate density by square quadrants:
+```{r Local density}
+murders_quadrat <- quadratcount(murders_ppp, nx = 20, ny = 20)
+plot(murders_quadrat, main = "Murders by quadrant in CDMX")
+```
+
+### Kernel Density
+
+Kernel Density calculates the density of the point entities around each output raster cell. Conceptually, a uniform curved surface is fitted over each point. The surface value is highest at the point location and decreases as the distance from the point increases, reaching zero at the search radius distance from the point. Compute a kernel smoothed intensity function from a point pattern.
+
+Calculate kernel density estimate (KDE) using `density.ppp` function, now with a 500 sigma The smoothing bandwidth (the amount of smoothing) value (threshold):
+```{r Kernel density}
+murders_kde <- density.ppp(murders_ppp, kernel = "gaussian", sigma = 500, adjust = 2.5, diggle = FALSE)
+plot(murders_kde, main = "Murders KDE in CDMX")
+```
+
+To export density as a raster file, it is needed to assign a coordinate reference system (CRS) using `crs` function and write the file with the `WriteRaster` function:
+
+For data on CRS, see: "Overview of Coordinate Reference Systems (CRS) in R".
+```{r Export Kernel density to TIFF, warning=FALSE}
+murders_kde_raster <- raster(murders_kde)
+
+crs(murders_kde_raster) <- "+proj=utm +zone=14 +ellps=GRS80 +units=m +no_defs"
+
+writeRaster(murders_kde_raster,
+            filename = "Data/murders_kde.tiff",
+            format = "GTiff",
+            overwrite = TRUE,
+            NAflag = -9999)
+```
+
+## References:
+
+* Baddeley, A. (2008). *Analysing spatial point patterns in R.* Technical report, CSIRO, 2010. Version 4. Available at [www.csiro.au/resources/pf16h.html] (www.csiro.au/resources/pf16h.html).
+* Oyana, T. J. (2020). *Spatial Analysis with R: Statistics, Visualization, and Computational Methods.* CRC press.
