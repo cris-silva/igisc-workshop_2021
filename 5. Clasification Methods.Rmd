@@ -1,0 +1,486 @@
+---
+title: "5. Introduction to Multivariate Clustering Analysis"
+author: "Ana J. Alegre (jalegre@centrogeo.edu.mx), Cristian Silva (csilva@centrogeo.edu.mx)"
+output: html_notebook
+date: "11/4/2021"
+---
+
+## Introduction
+
+In this section we will try to solve a classification problem by discovering the number and composition of groups in a universe/sample of observations. We will use methods of similarity/dissimilarity, or proximity, or distances between them. We will assign observations (e.g., locations) to homogeneous groups in those observations based on variables of interest to form heterogeneous groups among them.
+
+## Objectives
+
+We will learn about two general classification methods: Clustering by K-Means and hierarchical clustering. Finally, we will review a spatial clustering method with neighborhood by continuity.
+
+The objective of Cluster Analysis is to obtain groups of objects so that, on the one hand, objects belonging to the same group are very similar to each other and, on the other hand, objects belonging to different groups have different behavior with respect to the variables analyzed.
+
+It is an exploratory technique since most of the time it does not use any type of statistical model to carry out the classification process.
+
+One should always be alert to the danger of obtaining, as a result of the analysis, not a classification of the data but a dissection of the data into different groups. The analyst's knowledge of the problem will decide which groups are significant and which are not.
+
+## Data preparation
+
+First of all, clear all objects from the environment:
+```{r Clean environment}
+rm(list = ls())
+```
+
+Load the packages to be used:
+```{r Load packages}
+library(tidyverse)
+library(sf)
+library(janitor)
+library(tmap)
+library(rmapshaper)
+library(factoextra)
+library(clusterCrit)
+library(NbClust)
+library(spdep)
+library(corrplot)
+library(igraph)
+```
+
+Load the data you obtained in exercise 2. Plain and spatial data wrangling:
+```{r Read offenses by state data}
+data <-
+  st_read("Data/states_offenses.gpkg") %>% 
+  ms_simplify() %>% 
+  glimpse()
+```
+
+## Clustering analysis
+
+Cluster analysis is a multivariate technique whose basic idea is to classify objects by forming groups/conglomerates (clusters) that are as homogeneous as possible within themselves and heterogeneous among themselves.
+
+It arises from the need to design a strategy to define groups of homogeneous objects. This grouping is based on the idea of distance or similarity between the observations and the obtaining of these clusters depends on the criterion or distance considered, for example, a deck of Spanish cards could be divided in different ways: in two clusters (figures and numbers), in four clusters (the four suits), in eight clusters (the four suits and depending on whether they are figures or numbers). That is, the number of clusters depends on what we consider similar.
+
+Obtain a table of the data on the variables we will consider for our analysis from the layer. In this case we will analyze the similarities that the 32 states of Mexico may have in relation to three high impact crimes: murders, extortions and kidnappings, and the prevalence of these crimes with the population:
+```{r Create a tibble object with variables}
+data_states <-
+  data %>% 
+  as_tibble() %>% 
+  select(clave_ent, poblacion, extorsion, homicidio, secuestro) %>% 
+  glimpse()
+```
+
+## Hierarchical clustering
+
+The objective of hierarchical methods is to group clusters to form a new one or to separate an existing one to give rise to two new ones, so that, if this process of agglomeration or division is successively carried out, some distance is minimized or some measure of similarity is maximized.
+similarity.
+
+This procedure attempts to identify relatively homogeneous groups of cases (or variables) based on selected characteristics. It allows to work jointly with mixed type variables (qualitative and quantitative), being possible to analyze the raw variables or to choose from a variety of standardization transformations. It is used when the number of clusters is not known a priori and when the number of objects is not very large.  As mentioned above, the objects of hierarchical clustering analysis can be cases or variables, depending on whether you want to classify cases or examine the relationships between variables.
+
+NbClust package provides 30 indices for determining the number of clusters and proposes to user the best clustering scheme from the different results obtained by varying all combinations of number of clusters, distance measures, and clustering methods:
+```{r Index for the best clustering}
+states_hierarchical <-
+  data_states %>% 
+  select(-clave_ent) %>% 
+  NbClust(distance = "euclidean",
+          min.nc = 2,
+          max.nc = 6,
+          method = "ward.D",
+          index = "all")
+states_hierarchical
+```
+
+### Dendrogram
+
+It is a graphical representation in the form of a tree, in which the clusters are represented by vertical (horizontal) strokes and the melting stages by horizontal (vertical) strokes. The separation between merging stages is proportional to the distance between the clusters merging at that stage. SPSS represents the distances between groups rescaled, therefore they are difficult to interpret. Dendrograms can be used to assess the cohesion of the clusters that have formed and provide information on the appropriate number of clusters to retain.
+
+Euclidian distances:
+```{r Euclidian distances}
+hierarchical_states_distance <- 
+  data_states %>% 
+  select(-clave_ent) %>% 
+  dist(method = "euclidean")
+hierarchical_states_distance
+hierarchical_states_distance
+```
+
+Hierarchical cluster analysis on a set of dissimilarities and methods for analyzing it:
+```{r Hierarchical dissimilarities}
+hierarchical_states_distance <- 
+  hierarchical_states_distance %>% 
+  hclust(method = "ward.D")
+hierarchical_states_distance
+```
+
+Hierarchical cluster analysis graph:
+```{r Hierarchical dissimilarities Graphic, warning=FALSE}
+fviz_dend(hierarchical_states_distance, cex = 0.5)
+```
+
+Hierarchical cluster analysis graph:
+```{r Hierarchical dissimilarities Graphic 2, warning=FALSE}
+fviz_dend(hierarchical_states_distance, k = 2, 
+          cex = 0.5,
+          k_colors = c("#2E9FDF", "#00AFBB", "#E7B800", "#FC4E07"),
+          color_labels_by_k = TRUE, # Colores x cluster
+          rect = TRUE) # Rectangulos
+```
+
+The dendogram shows as the most successful solution the one formed by two clusters.
+
+Dendogram circular graphic:
+```{r Dendogram circular graph}
+fviz_dend(hierarchical_states_distance, cex = 0.5, k = 2,
+          k_colors = "jco", type = "circular")
+```
+Dendogram phologenic graphic:
+```{r Phologenic graph}
+fviz_dend(hierarchical_states_distance, k = 2, k_colors = "jco",
+          type = "phylogenic", repel = TRUE) 
+```
+
+The number of clusters depends on where we cut the dendogram, so the decision on the optimal number of clusters is subjective. It is convenient to choose a number of clusters that we know how to interpret. 
+
+Comments on hierarchical clustering:
+
+* Performing hierarchical clustering on large data sets is problematic as a tree with more than 50 individuals is difficult to represent and interpret.
+
+* A general disadvantage is the impossibility of reassigning individuals to clusters in cases where the classification was doubtful in the early stages of the analysis.
+
+* Because cluster analysis involves a choice between different measures and procedures, it is often difficult to judge the veracity of the results.
+
+* It is recommended to compare the results with different clustering methods. Similar solutions generally indicate the existence of structure in the data. Very different solutions probably indicate poor structure.
+
+* In the latter case, the validity of the clusters is judged by a qualitative interpretation which may be subjective.
+
+* The number of clusters depends on where we cut the dendogram.
+
+### Clustering analysis by k-means
+
+K-means cluster analysis is a tool designed to assign cases to a fixed number of groups, whose characteristics are not known, but are based on a set of variables that must be quantitative. It is very useful when you want to classify a large number of cases. It is a method of grouping cases based on the distances between them on a set of quantitative variables. This agglomeration method does not allow grouping variables. The optimality objective pursued is to "maximize homogeneity within groups."
+
+A good cluster analysis is:
+
+Efficient. It uses as few clusters as possible.
+Effective. Captures all statistically and commercially important clusters. 
+
+K-means optimal number of clusters:
+```{r K-means optimal number of clusters}
+data_states %>% 
+  select(poblacion, extorsion, homicidio, secuestro) %>% 
+  fviz_nbclust(kmeans,
+               method = "wss")
+```
+#### Using 3 clusters
+
+K-means with 3 clusters:
+```{r K-means with 3 clusters}
+data_cluster3 <-
+  data_states %>% 
+  select(poblacion, extorsion, homicidio, secuestro) %>% 
+  kmeans(centers = 3,
+         nstart = 25)
+data_cluster3
+```
+
+K-means graph with 3 clusters:
+```{r K-means graph with 3 clusters}
+data_cluster3 %>% 
+  fviz_cluster(data = select(data_states, -clave_ent))
+```
+
+#### Using 4 clusters
+
+K-means with 4 clusters:
+```{r K-means with foru clusters}
+data_cluster4 <-
+  data_states %>% 
+  select(poblacion, extorsion, homicidio, secuestro) %>% 
+  kmeans(centers = 4,
+         nstart = 25)
+
+data_cluster4
+```
+
+K-means graph with 4 clusters 
+```{r K means graph with 4 clusters}
+data_cluster4 %>% 
+  fviz_cluster(data = select(data_states, -clave_ent))
+```
+
+#### Using 5 clusters
+
+K-means with 5 clusters:
+```{r}
+data_cluster5 <-
+  data_states %>% 
+  select(poblacion, extorsion, homicidio, secuestro) %>% 
+  kmeans(centers = 5,
+         nstart = 25)
+
+data_cluster5
+```
+
+K-means graph with 5 clusters:
+```{r K-means graph with 5 clusters:}
+data_cluster5 %>% 
+  fviz_cluster(data = select(data_states, -clave_ent))
+```
+
+Determine the index, intCriteria calculates various internal clustering validation or quality criteria:
+```{r Index cluster}
+index_cluster <- 
+  data_states %>% 
+  select(-clave_ent) %>% 
+  as.matrix() %>% 
+  intCriteria(data_cluster3$cluster,
+              "all")
+index_cluster
+```
+
+The function intCriteria calculates internal clustering indexes, with 3 clusters:
+```{r Internal clustering indexes}
+data_states %>% 
+  select(-clave_ent) %>% 
+  as.matrix() %>% 
+  intCriteria(data_cluster3$cluster,
+              c("Dunn"))
+```
+
+The function intCriteria calculates internal clustering indexes, with 4 clusters:
+```{r Index with 4 clusters}
+data_states %>% 
+  select(-clave_ent) %>% 
+  as.matrix() %>% 
+  intCriteria(data_cluster4$cluster,
+              c("Dunn"))
+```
+
+The function intCriteria calculates internal clustering indexes, with 5 clusters:
+```{r Index with 5 clusters}
+data_states %>% 
+  select(-clave_ent) %>% 
+  as.matrix() %>% 
+  intCriteria(data_cluster5$cluster,
+              c("Dunn"))
+```
+
+The optimal number of clusters is 4.
+
+Join the cluster obtained to each state:
+```{r States by clusters}
+states_cluster <-
+  data %>% 
+  bind_cols(tibble(cluster = data_cluster4$cluster)) %>% 
+  mutate_at("cluster", as.character) %>% 
+  glimpse()
+```
+
+We can obtain and save the CSV file:
+```{r Write the CSV file}
+states_table = data.frame(states_cluster)
+write_csv(states_table, file="states_table_4cluster.csv")
+```
+
+Map of clusters by state:
+```{r Map of clusters by state, warning=FALSE}
+tm_shape(states_cluster) +
+  tm_borders(lwd = 0.05) +
+  tm_polygons("cluster",
+              style = "cat",
+              border.alpha = 0)
+```
+
+## Skater spatial clustering: contiguity-based neighboring
+
+The advantage of spatially constrained methods is that it has a hard requirement that spatial objects in the same cluster are also geographically linked.
+
+If we want to ensure that all objects are in entirely spatially-contiguous groups we can turn to algorithms specifically designed to the task.
+
+There are many heuristics and algorithms to carry out contiguity-constrained clustering, the main one included in R is the SKATER approach. This is implemented in the spdep package. The algorithm is based on pruning a minimum spanning tree constructed from the contiguity structure of the spatial units that need to be grouped.
+
+Getting to the clusters involves several steps, including building a graph for the contiguity structure, computing the minimum spanning tree for that graph, and finally pruning the tree for the desired number of clusters.
+
+The next function builds a neighbours list based on regions with contiguous boundaries, that is sharing one or more boundary point.
+```{r Neighbor states}
+neighbor_states <-
+  data %>% 
+  poly2nb()
+neighbor_states
+```
+
+We could read in the neighbor information:
+```{r Neighbor information}
+neighbor_states %>% 
+  summary()
+```
+
+We can draw a graph representation of the neighbour structure:
+```{r Neighbour structure}
+plot(data$geom,
+     border = gray(0.5))
+plot(neighbor_states,
+     coordinates(as(data, Class = "Spatial")),
+     col = "blue",
+     add = T)
+```
+
+### Contiguity-constrained cluster
+
+The skater function takes three mandatory arguments: the first two columns of the MST matrix (i.e., not the costs), the standardized data matrix (to update the costs as units are being grouped), and the number of cuts. The latter is possibly somewhat confusingly set to one less than the number of clusters. So, the value specified is not the number of clusters, but the number of cuts in the graph, one less than the number of clusters.
+
+Data as tibble:
+```{r Obtain tibble object form data}
+data_tibble <- 
+  data %>% 
+  as_tibble()
+```
+
+
+The cost of each edge is the distance between it nodes. This function compute this distance using a data.frame with observations vector in each node.
+```{r Cost by distances}
+cost_states <-
+  neighbor_states %>%
+  nbcosts(data = select(data_tibble, poblacion, extorsion, homicidio, secuestro))
+head(cost_states)
+```
+
+The nb2listw function supplements a neighbours list with spatial weights for the chosen coding scheme:
+```{r Neoghbor spatial weights list}
+wheigt_neighbor_states <-
+  neighbor_states %>% 
+  nb2listw(cost_states,
+           style = "B")
+wheigt_neighbor_states %>% 
+  summary()
+```
+The minimal spanning tree is a connected graph with n nodes and n-1 edges. This is a smaller class of possible partitions of a graph by pruning edges with high dissimilarity. If one edge is removed, the graph is partioned in two unconnected subgraphs. 
+Weight matrix:
+```{r Weight matrix}
+matrix_w_n_states <-
+  wheigt_neighbor_states %>%
+  mstree()
+head(matrix_w_n_states)
+```
+
+Weight matrix graph:
+```{r Weight matrix graph}
+plot(matrix_w_n_states,
+     coordinates(as(data, Class = "Spatial")),
+     col = "blue",
+     cex.lab = 0.7)
+plot(data$geom,
+     border = gray(0.5),
+     add = T)
+```
+
+#### With 2 groups
+
+Spatial 'K'luster Analysis by Tree Edge Removal (SKATER) for two groups:
+```{r SKATER for two groups}
+states_spatial_cluster1 <-
+  matrix_w_n_states[, 1:2] %>% 
+  skater(select(data_tibble, poblacion, extorsion, homicidio, secuestro),
+         1) %>% 
+  glimpse()
+```
+
+SKATER graph for two groups:
+```{r SKATER graph for two groups}
+plot(states_spatial_cluster1,
+     coordinates(as(data, Class = "Spatial")),
+     cex.lab = 0.7,
+     groups.colors = c("red", "green"))
+plot(data$geom,
+     border = gray(0.5),
+     add = T)
+```
+SKATER map for two groups:
+```{r SKATER map for two groups}
+plot(data$geo,
+     col = c("red", "green")[states_spatial_cluster1$groups])
+```
+
+#### With 4 groups:
+
+Spatial 'K'luster Analysis by Tree Edge Removal (SKATER) for two groups:
+```{r SKATER for 4 groups}
+states_spatial_cluster2 <-
+  matrix_w_n_states[, 1:2] %>% 
+  skater(select(data_tibble, poblacion, extorsion, homicidio, secuestro),
+        3) %>% 
+  glimpse()
+```
+
+SKATER graph for 4 groups:
+```{r SKATER graph for 4 groups}
+plot(states_spatial_cluster2,
+     coordinates(as(data, Class = "Spatial")),
+     cex.lab = 0.7,
+     groups.colors = c("red", "green", "blue", "brown"))
+plot(data$geom,
+     border = gray(0.5),
+     add = T)
+```
+SKATER map for 4 groups:
+```{r SKATER map for 4 groups}
+plot(data$geo,
+     col = c("red", "green", "blue", "brown")[states_spatial_cluster2$groups])
+```
+
+#### With 6 groups
+
+Spatial 'K'luster Analysis by Tree Edge Removal (SKATER) for 6 groups:
+```{r SKATER for 6 groups:}
+states_spatial_cluster3 <-
+  matrix_w_n_states[, 1:2] %>% 
+  skater(select(data_tibble, poblacion, extorsion, homicidio, secuestro),
+        5) %>% 
+  glimpse()
+```
+
+SKATER graph for 6 groups:
+```{r SKATER graph for 6 groups}
+plot(states_spatial_cluster3,
+     coordinates(as(data, Class = "Spatial")),
+     cex.lab = 0.7,
+     groups.colors = c("red", "green", "blue", "brown", "yellow", "orange"))
+plot(data$geom,
+     border = gray(0.5),
+     add = T)
+```
+SKATER map for 6 groups:
+```{r SKATER map for 6 groups}
+plot(data$geo,
+     col = c("red", "green", "blue", "brown", "yellow", "orange")[states_spatial_cluster3$groups])
+```
+
+#### With 8 groups
+
+Spatial 'K'luster Analysis by Tree Edge Removal (SKATER) for 8 groups:
+```{r SKATER for 8 groups}
+states_spatial_cluster4 <-
+  matrix_w_n_states[, 1:2] %>% 
+  skater(select(data_tibble, poblacion, extorsion, homicidio, secuestro),
+        7) %>% 
+  glimpse()
+```
+
+```{r SKATER graph for 8 groups}
+plot(states_spatial_cluster3,
+     coordinates(as(data, Class = "Spatial")),
+     cex.lab = 0.7,
+     groups.colors = c("red", "green", "blue", "brown", "yellow", "orange", "gray", "purple"))
+plot(data$geom,
+     border = gray(0.5),
+     add = T)
+```
+
+```{r SKATER map for 8 groups}
+plot(data$geo,
+     col = c("red", "green", "blue", "brown", "yellow", "orange", "gray", "purple")[states_spatial_cluster3$groups])
+```
+
+## References:
+
+* Estadística. *Universidad de Granada.* [http://wpd.ugr.es/~bioestad/guia-spss/practica-8/](http://wpd.ugr.es/~bioestad/guia-spss/practica-8/)
+
+* Luc Anselin. *Cluster Analysis (3).* Spatially Cosntrained Clustering Methods
+[https://geodacenter.github.io/tutorials/spatial_cluster/skater.html](https://geodacenter.github.io/tutorials/spatial_cluster/skater.html)
+
+* Dmitri Shkolnik. *Spatially constrained clustering and regionalization.*
+[https://www.dshkol.com/post/spatially-constrained-clustering-and-regionalization/](https://www.dshkol.com/post/spatially-constrained-clustering-and-regionalization/)
