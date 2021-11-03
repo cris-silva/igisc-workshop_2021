@@ -89,7 +89,7 @@ class(a)
 
 It can be a letter or a combination of letters enclosed by quotes is considered as a character data type by R. It can be alphabets or numbers.
 ```{r Character data type}
-a <- "I like this workshop! (we hope so)" # When casting the number to integer, it will truncate decimal value
+a <- "I like this workshop! (we hope so)" 
 a
 ```
 
