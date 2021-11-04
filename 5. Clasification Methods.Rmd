@@ -60,7 +60,7 @@ Obtain a table of the data on the variables we will consider for our analysis fr
 data_states <-
   data %>% 
   as_tibble() %>% 
-  select(clave_ent, poblacion, extorsion, homicidio, secuestro) %>% 
+  dplyr::select(clave_ent, poblacion, extorsion, homicidio, secuestro) %>% 
   glimpse()
 ```
 
@@ -75,7 +75,7 @@ NbClust package provides 30 indices for determining the number of clusters and p
 ```{r Index for the best clustering}
 states_hierarchical <-
   data_states %>% 
-  select(-clave_ent) %>% 
+  dplyr::select(-clave_ent) %>% 
   NbClust(distance = "euclidean",
           min.nc = 2,
           max.nc = 6,
@@ -92,7 +92,7 @@ Euclidian distances:
 ```{r Euclidian distances}
 hierarchical_states_distance <- 
   data_states %>% 
-  select(-clave_ent) %>% 
+  dplyr::select(-clave_ent) %>% 
   dist(method = "euclidean")
 hierarchical_states_distance
 hierarchical_states_distance
@@ -161,7 +161,7 @@ Effective. Captures all statistically and commercially important clusters.
 K-means optimal number of clusters:
 ```{r K-means optimal number of clusters}
 data_states %>% 
-  select(poblacion, extorsion, homicidio, secuestro) %>% 
+  dplyr::select(poblacion, extorsion, homicidio, secuestro) %>% 
   fviz_nbclust(kmeans,
                method = "wss")
 ```
@@ -171,7 +171,7 @@ K-means with 3 clusters:
 ```{r K-means with 3 clusters}
 data_cluster3 <-
   data_states %>% 
-  select(poblacion, extorsion, homicidio, secuestro) %>% 
+  dplyr::select(poblacion, extorsion, homicidio, secuestro) %>% 
   kmeans(centers = 3,
          nstart = 25)
 data_cluster3
@@ -180,7 +180,7 @@ data_cluster3
 K-means graph with 3 clusters:
 ```{r K-means graph with 3 clusters}
 data_cluster3 %>% 
-  fviz_cluster(data = select(data_states, -clave_ent))
+  fviz_cluster(data = dplyr::select(data_states, -clave_ent))
 ```
 
 #### Using 4 clusters
@@ -189,7 +189,7 @@ K-means with 4 clusters:
 ```{r K-means with foru clusters}
 data_cluster4 <-
   data_states %>% 
-  select(poblacion, extorsion, homicidio, secuestro) %>% 
+  dplyr::select(poblacion, extorsion, homicidio, secuestro) %>% 
   kmeans(centers = 4,
          nstart = 25)
 
@@ -199,7 +199,7 @@ data_cluster4
 K-means graph with 4 clusters 
 ```{r K means graph with 4 clusters}
 data_cluster4 %>% 
-  fviz_cluster(data = select(data_states, -clave_ent))
+  fviz_cluster(data = dplyr::select(data_states, -clave_ent))
 ```
 
 #### Using 5 clusters
@@ -208,7 +208,7 @@ K-means with 5 clusters:
 ```{r}
 data_cluster5 <-
   data_states %>% 
-  select(poblacion, extorsion, homicidio, secuestro) %>% 
+  dplyr::select(poblacion, extorsion, homicidio, secuestro) %>% 
   kmeans(centers = 5,
          nstart = 25)
 
@@ -218,14 +218,14 @@ data_cluster5
 K-means graph with 5 clusters:
 ```{r K-means graph with 5 clusters:}
 data_cluster5 %>% 
-  fviz_cluster(data = select(data_states, -clave_ent))
+  fviz_cluster(data = dplyr::select(data_states, -clave_ent))
 ```
 
 Determine the index, intCriteria calculates various internal clustering validation or quality criteria:
 ```{r Index cluster}
 index_cluster <- 
   data_states %>% 
-  select(-clave_ent) %>% 
+  dplyr::select(-clave_ent) %>% 
   as.matrix() %>% 
   intCriteria(data_cluster3$cluster,
               "all")
@@ -235,7 +235,7 @@ index_cluster
 The function intCriteria calculates internal clustering indexes, with 3 clusters:
 ```{r Internal clustering indexes}
 data_states %>% 
-  select(-clave_ent) %>% 
+  dplyr::select(-clave_ent) %>% 
   as.matrix() %>% 
   intCriteria(data_cluster3$cluster,
               c("Dunn"))
@@ -244,7 +244,7 @@ data_states %>%
 The function intCriteria calculates internal clustering indexes, with 4 clusters:
 ```{r Index with 4 clusters}
 data_states %>% 
-  select(-clave_ent) %>% 
+  dplyr::select(-clave_ent) %>% 
   as.matrix() %>% 
   intCriteria(data_cluster4$cluster,
               c("Dunn"))
@@ -253,7 +253,7 @@ data_states %>%
 The function intCriteria calculates internal clustering indexes, with 5 clusters:
 ```{r Index with 5 clusters}
 data_states %>% 
-  select(-clave_ent) %>% 
+  dplyr::select(-clave_ent) %>% 
   as.matrix() %>% 
   intCriteria(data_cluster5$cluster,
               c("Dunn"))
@@ -335,7 +335,7 @@ The cost of each edge is the distance between it nodes. This function compute th
 ```{r Cost by distances}
 cost_states <-
   neighbor_states %>%
-  nbcosts(data = select(data_tibble, poblacion, extorsion, homicidio, secuestro))
+  nbcosts(data = dplyr::select(data_tibble, poblacion, extorsion, homicidio, secuestro))
 head(cost_states)
 ```
 
@@ -374,7 +374,7 @@ Spatial 'K'luster Analysis by Tree Edge Removal (SKATER) for two groups:
 ```{r SKATER for two groups}
 states_spatial_cluster1 <-
   matrix_w_n_states[, 1:2] %>% 
-  skater(select(data_tibble, poblacion, extorsion, homicidio, secuestro),
+  skater(dplyr::select(data_tibble, poblacion, extorsion, homicidio, secuestro),
          1) %>% 
   glimpse()
 ```
@@ -401,7 +401,7 @@ Spatial 'K'luster Analysis by Tree Edge Removal (SKATER) for two groups:
 ```{r SKATER for 4 groups}
 states_spatial_cluster2 <-
   matrix_w_n_states[, 1:2] %>% 
-  skater(select(data_tibble, poblacion, extorsion, homicidio, secuestro),
+  skater(dplyr::select(data_tibble, poblacion, extorsion, homicidio, secuestro),
         3) %>% 
   glimpse()
 ```
@@ -428,7 +428,7 @@ Spatial 'K'luster Analysis by Tree Edge Removal (SKATER) for 6 groups:
 ```{r SKATER for 6 groups:}
 states_spatial_cluster3 <-
   matrix_w_n_states[, 1:2] %>% 
-  skater(select(data_tibble, poblacion, extorsion, homicidio, secuestro),
+  skater(dplyr::select(data_tibble, poblacion, extorsion, homicidio, secuestro),
         5) %>% 
   glimpse()
 ```
@@ -455,7 +455,7 @@ Spatial 'K'luster Analysis by Tree Edge Removal (SKATER) for 8 groups:
 ```{r SKATER for 8 groups}
 states_spatial_cluster4 <-
   matrix_w_n_states[, 1:2] %>% 
-  skater(select(data_tibble, poblacion, extorsion, homicidio, secuestro),
+  skater(dplyr::select(data_tibble, poblacion, extorsion, homicidio, secuestro),
         7) %>% 
   glimpse()
 ```
